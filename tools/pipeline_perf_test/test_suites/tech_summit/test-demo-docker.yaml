@@ -114,41 +114,41 @@ components:
         endpoint: http://localhost:8087/telemetry/metrics?format=prometheus&reset=false
 
 tests:
-  # - name: OTLP-OTLP (Go Collector)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
-  #     variables:
-  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otlp-otlp.yaml
-  #       loadgen_exporter_type: otlp
-  #       backend_receiver_type: otlp
-  # - name: OTLP-OTLP (Rust Engine)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
-  #     variables:
-  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp.yaml
-  #       loadgen_exporter_type: otlp
-  #       backend_receiver_type: otlp
-  # - name: OTLP-OTLP (Rust Engine - Passthrough)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
-  #     variables:
-  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
-  #       loadgen_exporter_type: otlp
-  #       backend_receiver_type: otlp
-  # - name: OTAP-OTAP (Go Collector)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
-  #     variables:
-  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otap-otap.yaml
-  #       loadgen_exporter_type: otap
-  #       backend_receiver_type: otap
-  # - name: OTAP-OTAP (Rust Engine)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
-  #     variables:
-  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otap-otap.yaml
-  #       loadgen_exporter_type: otap
-  #       backend_receiver_type: otap
+  - name: OTLP-OTLP (Go Collector)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
+      variables:
+        collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otlp-otlp.yaml
+        loadgen_exporter_type: otlp
+        backend_receiver_type: otlp
+  - name: OTLP-OTLP (Rust Engine)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp.yaml
+        loadgen_exporter_type: otlp
+        backend_receiver_type: otlp
+  - name: OTLP-OTLP (Rust Engine - Passthrough)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
+        loadgen_exporter_type: otlp
+        backend_receiver_type: otlp
+  - name: OTAP-OTAP (Go Collector)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
+      variables:
+        collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otap-otap.yaml
+        loadgen_exporter_type: otap
+        backend_receiver_type: otap
+  - name: OTAP-OTAP (Rust Engine)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/otap-otap.yaml
+        loadgen_exporter_type: otap
+        backend_receiver_type: otap
 
   - name: SYSLOG-OTLP (Go Collector)
     from_template:

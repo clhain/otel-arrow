@@ -209,6 +209,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -347,7 +348,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<img src=\"https://i.ibb.co/RG6P4Rgk/observability-fire-Page-4.png\" />",
+        "content": "<img src=\"https://i.ibb.co/fdQDRR5w/Blank-diagram-Page-4-4.png\" />",
         "mode": "html"
       },
       "pluginVersion": "12.1.1",
@@ -371,6 +372,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -504,6 +506,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -629,7 +632,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<img src=\"https://i.ibb.co/nN8kVL6j/Blank-diagram-Page-4-1.png\" />",
+        "content": "<img src=\"https://i.ibb.co/0j2SXftY/Blank-diagram-Page-4-5.png\" />",
         "mode": "html"
       },
       "pluginVersion": "12.1.1",
@@ -653,6 +656,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -906,7 +910,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<img src=\"https://i.ibb.co/gbv0PZ67/Blank-diagram-Page-4-3.png\" />",
+        "content": "<img src=\"https://i.ibb.co/4wMTJqXW/Blank-diagram-Page-4-6.png\" />",
         "mode": "html"
       },
       "pluginVersion": "12.1.1",
@@ -930,6 +934,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1063,6 +1068,7 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
+            "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1439,12 +1445,12 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-7m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Live",
   "uid": "d550a27b-269e-480e-a020-e3eecf6fc04d",
-  "version": 12
+  "version": 17
 }
