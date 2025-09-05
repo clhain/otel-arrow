@@ -1,0 +1,44 @@
+settings:
+  default_control_channel_size: 100
+  default_pdata_channel_size: 100
+
+nodes:
+  receiver:
+    kind: receiver
+    {% if backend_receiver_type == "otap" %}
+    plugin_urn: "urn:otel:otap:receiver"
+    out_ports:
+      out_port:
+        destinations:
+          - perf
+        dispatch_strategy: round_robin
+    config:
+      listening_addr: "0.0.0.0:1235"
+      message_size: 100
+      compression_method: Gzip
+    {% elif backend_receiver_type == "otlp" %}
+    plugin_urn: "urn::otel::otlp::receiver"
+    out_ports:
+      out_port:
+        destinations:
+          - perf
+        dispatch_strategy: round_robin
+    config:
+      listening_addr: "0.0.0.0:1235"
+      compression_method: Gzip
+    {% else %}
+    # Default or error receiver config
+    plugin_urn: "urn:unknown:receiver"
+    config:
+      error: "Unknown backend_receiver_type: {{ backend_receiver_type }}"
+    {% endif %}
+
+  perf:
+    kind: exporter
+    plugin_urn: "urn:otel:otap:perf:exporter"
+    config:
+      frequency: 500
+      cpu_usage: false
+      mem_usage: false
+      disk_usage: false
+      io_usage: false

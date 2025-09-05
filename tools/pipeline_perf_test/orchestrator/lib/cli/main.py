@@ -19,6 +19,30 @@ from lib.cli.telemetry import setup_telemetry, TelemetryClient
 from lib.impl import strategies  # Do not remove
 from lib.impl import actions  # Do not remove
 
+import pyarrow as pa
+import pyarrow.parquet as pq
+import pandas as pd
+
+
+def write_dataframe_to_parquet(
+    df: pd.DataFrame, file_path: str, compression: str = "snappy"
+):
+    """
+    Write a pandas DataFrame to a Parquet file on disk using pyarrow.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to write.
+        file_path (str): The full path where the Parquet file will be saved.
+        compression (str): Compression type ('snappy', 'gzip', 'brotli', etc.). Default is 'snappy'.
+    """
+    # Convert the pandas DataFrame to a PyArrow Table
+    table = pa.Table.from_pandas(df)
+
+    # Write the table to Parquet
+    pq.write_table(table, file_path, compression=compression)
+
+    print(f"DataFrame written to {file_path} with {compression} compression.")
+
 
 def main():
     """
@@ -39,13 +63,17 @@ def main():
 
     ts.run()
 
-    if args.print_spans or args.print_events or args.print_metrics:
+    if args.print_spans or args.print_events or args.print_metrics or args.save_telemetry:
         import pandas as pd
 
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
         pd.set_option("display.max_colwidth", 150)
         tc: TelemetryClient = ts.context.get_telemetry_client()
+        if args.save_telemetry:
+            write_dataframe_to_parquet(tc.metrics.query_metrics(), "metrics.parquet")
+            write_dataframe_to_parquet(tc.spans.query_span_events(), "events.parquet")
+            write_dataframe_to_parquet(tc.spans.query_spans(), "spans.parquet")
         if args.print_spans:
             print(tc.spans.query_spans().to_string())
         if args.print_events:

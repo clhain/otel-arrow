@@ -1,0 +1,153 @@
+steps:
+  - name: Configure syslog generator to send to correct backend
+    action:
+      update_component_strategy:
+        target: syslog-generator
+        deployment:
+          docker:
+            environment:
+              # overriden in test steps
+              - SYSLOG_SERVER=go-collector
+              - SYSLOG_PORT=4317
+              - SYSLOG_TRANSPORT=udp
+  - name: Configure Otel Collector deployment for contrib image with syslog exporter
+    action:
+      update_component_strategy:
+        target: go-collector
+        deployment:
+          docker:
+            image: otel/opentelemetry-collector-contrib:latest
+  - name: Deploy Backend Engine
+    action:
+      component_action:
+        phase: deploy
+        target: backend-service
+    hooks:
+      run:
+        pre:
+          # Render the engine config into the suite config directory
+          - render_template:
+              template_path: './test_suites/tech_summit/templates/configs/backend/config.yaml.j2'
+              output_path: ./test_suites/tech_summit/configs/backend/config.rendered.yaml
+              variables:
+                backend_receiver_type: '{{backend_receiver_type}}'
+        post:
+          # Wait for the telemetry endpoint to be active (TODO: switch to healthcheck endpoint when available).
+          - ready_check_http:
+              url: http://localhost:8087/telemetry/metrics?reset=false
+              method: GET
+              expected_status_code: 200
+  - name: Deploy Go Collector
+    action:
+      component_action:
+        phase: deploy
+        target: go-collector
+    hooks:
+      run:
+        pre:
+          # Render the collector config into the suite config directory
+          - render_template:
+              template_path: '{{collector_config_template}}'
+              output_path: ./test_suites/tech_summit/configs/otelcol/config.rendered.yaml
+              variables:
+                backend_hostname: backend-service
+        post:
+          # Wait for the telemetry endpoint to be active (TODO: switch to healthcheck endpoint when available).
+          - ready_check_http:
+              url: http://localhost:8086/metrics
+              method: GET
+              expected_status_code: 200
+  - name: Deploy Load Generator
+    action:
+      component_action:
+        phase: deploy
+        target: syslog-generator
+    hooks:
+      run:
+        post:
+          # Wait for the telemetry endpoint to be active (TODO: switch to healthcheck endpoint when available).
+          - ready_check_http:
+              url: http://localhost:5001/metrics
+              method: GET
+              expected_status_code: 200
+  - name: Monitor All
+    action:
+      multi_component_action:
+        phase: start_monitoring
+        targets:
+          - backend-service
+          - syslog-generator
+          - go-collector
+  - name: Start Load
+    action:
+      component_action:
+        phase: start
+        target: syslog-generator
+  - name: Wait for data
+    action:
+      wait:
+        delay_seconds: 5
+  # This is the main observation window, marked by custome events at start/stop
+  - name: Observe Load
+    action:
+      wait:
+        delay_seconds: 15
+    hooks:
+      run:
+        pre:
+          - record_event:
+              name: observation_start
+        post:
+          - record_event:
+              name: observation_stop
+  # Stop the load generator from sending traffic.
+  - name: Stop Load
+    action:
+      component_action:
+        phase: stop
+        target: syslog-generator
+  # Wait for all items in-flight to transit and ensure metrics are updated.
+  - name: Wait For Drain and Reset
+    action:
+      wait:
+        delay_seconds: 3
+  # Stop monitoring all components.
+  - name: Stop Monitoring All
+    action:
+      multi_component_action:
+        phase: stop_monitoring
+        targets:
+          - syslog-generator
+          - go-collector
+          - backend-service
+  # Stop all running components.
+  - name: Destroy All
+    action:
+      multi_component_action:
+        phase: destroy
+        targets:
+          - backend-service
+          - syslog-generator
+          - go-collector
+  # Run the report
+  - name: Run Report
+    action:
+      wait:
+        delay_seconds: 0
+    hooks:
+      run:
+        post:
+          - sql_report:
+              name: Tech Summit SQL Report
+              report_config_file: ./test_suites/tech_summit/configs/sql_report.yaml
+              output:
+                - format:
+                    template: {}
+                  destination:
+                    console: {}
+                - format:
+                    template: {}
+                  destination:
+                    file:
+                      directory: results/tech_summit/markdown
+

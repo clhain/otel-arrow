@@ -1,0 +1,42 @@
+settings:
+  default_control_channel_size: 100
+  default_pdata_channel_size: 100
+
+nodes:
+  receiver:
+    kind: receiver
+    plugin_urn: "urn:otel:otap:fake_data_generator"
+    out_ports:
+      out_port:
+        destinations:
+          - exporter
+        dispatch_strategy: round_robin
+    config:
+      traffic_config:
+        max_batch_size: 1000
+        signals_per_second: 50000
+        log_weight: 100
+      registry_path: https://github.com/open-telemetry/semantic-conventions.git[model]
+
+  {% if loadgen_exporter_type == "otap" %}
+  exporter:
+    kind: exporter
+    plugin_urn: "urn:otel:otap:exporter"
+    config:
+      grpc_endpoint: "http://{{engine_hostname}}:4317"
+      compression_method: Gzip
+  {% elif loadgen_exporter_type == "otlp" %}
+  exporter:
+    kind: exporter
+    plugin_urn: "urn:otel:otlp:exporter"
+    config:
+      grpc_endpoint: "http://{{engine_hostname}}:4317"
+      compression_method: Gzip
+  {% else %}
+  exporter:
+    kind: exporter
+    # Default or error receiver config
+    plugin_urn: "urn:unknown:receiver:{{ loadgen_exporter_type }}"
+    config:
+      error: "Unknown loadgen_exporter_type: {{ loadgen_exporter_type }}"
+  {% endif %}

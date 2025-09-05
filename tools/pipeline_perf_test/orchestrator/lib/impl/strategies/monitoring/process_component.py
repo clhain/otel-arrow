@@ -29,6 +29,7 @@ components:
       process_component:
         interval: 1.0
 """
+
 import threading
 import time
 from dataclasses import dataclass, field
@@ -90,9 +91,13 @@ class ProcessComponentMonitoringConfig(MonitoringStrategyConfig):
     Attributes:
         interval (Optional[float]): Time in seconds between each polling interval
                                     for metrics collection. Defaults to 1.0 second.
+        monitor_parent (Optional[bool]): Include the main/parent process output in results.
+        monitor_children (Optional[bool]): Include child process output in results if any.
     """
 
     interval: Optional[float] = 1.0
+    monitor_parent: Optional[bool] = True
+    monitor_children: Optional[bool] = True
 
 
 @monitoring_registry.register_class(STRATEGY_NAME)
@@ -168,6 +173,8 @@ components:
             "logger": logger,
             "test_suite_context": test_suite_context,
             "interval": self.config.interval,
+            "monitor_parent": self.config.monitor_parent,
+            "monitor_children": self.config.monitor_children,
         }
         monitoring_runtime.thread = threading.Thread(
             target=monitor, kwargs=monitor_args, daemon=True
@@ -213,17 +220,24 @@ components:
         return {}
 
 
-def get_resources(proc: psutil.Process):
+def get_resources(proc: psutil.Process, monitor_parent: bool, monitor_children: bool):
     """Get current resource utilization for the process and it's children.
 
     Parameters:
         proc: the process to monitor, including any spawned children.
+        monitor_parent (bool): include parent process info in results.
+        monitor_children (bool): include children process info in results.
 
     Returns:
         A tuple of cpu and memory values for the process and all children.
     """
     children = proc.children(recursive=True)
-    all_procs = [proc] + children
+    all_procs = []
+    if monitor_parent:
+        all_procs.append(proc)
+    if monitor_children:
+        all_procs.extend(children)
+
     cpu = 0.0
     memory = 0.0
 
@@ -231,7 +245,7 @@ def get_resources(proc: psutil.Process):
         try:
             times = p.cpu_times()  # short interval
             cpu += times.user + times.system
-            memory += p.memory_info().rss      # in bytes
+            memory += p.memory_info().rss  # in bytes
         except psutil.NoSuchProcess:
             continue
     return cpu, memory
@@ -245,6 +259,8 @@ def monitor(
     logger: LoggerAdapter,
     test_suite_context: ScenarioContext,
     interval: float = 1.0,
+    monitor_parent: bool = True,
+    monitor_children: bool = True,
 ):
     """
     Monitors an OS process by PID, reporting CPU and memory usage periodically.
@@ -257,6 +273,8 @@ def monitor(
         logger (LoggerAdapter): Logger for diagnostics and error messages.
         test_suite_context: Provides tracing context and instrumentation.
         interval (float): Polling interval in seconds.
+        monitor_parent (bool): include parent process info in results.
+        monitor_children (bool): include children process info in results.
     """
 
     cpu_usage_gauge = meter.create_gauge(
@@ -283,21 +301,24 @@ def monitor(
                 }
             )
 
-            (prev_total_time, _prev_mem) = get_resources(proc)
+            (prev_total_time, _prev_mem) = get_resources(
+                proc, monitor_parent, monitor_children
+            )
             prev_time = time.time()
 
             while not stop_event.is_set():
                 try:
                     time.sleep(interval)
 
-                    (cur_total_time, mem_usage) = get_resources(proc)
+                    (cur_total_time, mem_usage) = get_resources(
+                        proc, monitor_parent, monitor_children
+                    )
                     cur_time = time.time()
 
                     delta_proc = cur_total_time - prev_total_time
                     delta_time = cur_time - prev_time
 
                     cpu_usage = delta_proc / delta_time
-
 
                     labels = {
                         "pid": str(pid),

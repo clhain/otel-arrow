@@ -17,6 +17,7 @@ Key Features:
 Intended to be used by the orchestration layer to deploy, monitor, and manage containerized
 components.
 """
+
 import threading
 import time
 
@@ -26,10 +27,13 @@ from docker.errors import NotFound, APIError
 from ..stats import ProcessStats
 from .base import DeployedProcess
 
+
 class DockerProcess(DeployedProcess):
     """Class to manage Docker processes like containers"""
 
-    def __init__(self, container_id: str, client: docker.DockerClient, log_cli: bool=False):
+    def __init__(
+        self, container_id: str, client: docker.DockerClient, log_cli: bool = False
+    ):
         super().__init__("docker")
         self.container_id = container_id
         self.monitoring_thread = None
@@ -53,7 +57,9 @@ class DockerProcess(DeployedProcess):
                     print(f"CLI_COMMAND = docker rm -f {self.container_id}")
                 container.remove(force=True)
             except NotFound:
-                print(f"Container {self.container_id} not found. It may have already been removed.")
+                print(
+                    f"Container {self.container_id} not found. It may have already been removed."
+                )
             except APIError as e:
                 print(f"Error stopping/removing Docker container: {e}")
 
@@ -64,10 +70,13 @@ class DockerProcess(DeployedProcess):
         Args:
             interval: Time in seconds between polling.
         """
-        def monitor(container_id: str,
-                    stats: ProcessStats,
-                    stop_event: threading.Event,
-                    interval: float = 1.0):
+
+        def monitor(
+            container_id: str,
+            stats: ProcessStats,
+            stop_event: threading.Event,
+            interval: float = 1.0,
+        ):
             try:
                 container = self._client.containers.get(container_id)
             except APIError as e:
@@ -79,24 +88,34 @@ class DockerProcess(DeployedProcess):
                     stat_data = container.stats(stream=False)
 
                     # CPU usage calculation
-                    cpu_stats = stat_data['cpu_stats']
-                    precpu_stats = stat_data['precpu_stats']
-                    cpu_delta = cpu_stats['cpu_usage']['total_usage'] - precpu_stats['cpu_usage']['total_usage']
-                    system_delta = cpu_stats['system_cpu_usage'] - precpu_stats['system_cpu_usage']
+                    cpu_stats = stat_data["cpu_stats"]
+                    precpu_stats = stat_data["precpu_stats"]
+                    cpu_delta = (
+                        cpu_stats["cpu_usage"]["total_usage"]
+                        - precpu_stats["cpu_usage"]["total_usage"]
+                    )
+                    system_delta = (
+                        cpu_stats["system_cpu_usage"] - precpu_stats["system_cpu_usage"]
+                    )
 
                     cpu_usage = 0.0
                     if system_delta > 0.0 and cpu_delta > 0.0:
-                        num_cpus = len(cpu_stats['cpu_usage'].get('percpu_usage', [])) or cpu_stats['online_cpus']
+                        num_cpus = (
+                            len(cpu_stats["cpu_usage"].get("percpu_usage", []))
+                            or cpu_stats["online_cpus"]
+                        )
                         cpu_usage = (cpu_delta / system_delta) * num_cpus
 
                     # Memory usage in MiB
-                    mem_usage = stat_data['memory_stats']['usage']
+                    mem_usage = stat_data["memory_stats"]["usage"]
                     mem_mb = mem_usage / (1024 * 1024)
 
                     stats.add_sample(cpu_usage, mem_mb)
-                    print(f"Monitored Container ({container_id[:12]}) Cur. CPU (#Cores): {cpu_usage:.2f} "
-                          f"({stats.get_summary_string('cpu')}) Cur Mem (MiB): {mem_mb:.2f} "
-                          f"({stats.get_summary_string('mem')})")
+                    print(
+                        f"Monitored Container ({container_id[:12]}) Cur. CPU (#Cores): {cpu_usage:.2f} "
+                        f"({stats.get_summary_string('cpu')}) Cur Mem (MiB): {mem_mb:.2f} "
+                        f"({stats.get_summary_string('mem')})"
+                    )
 
                     time.sleep(interval)
 
@@ -112,9 +131,11 @@ class DockerProcess(DeployedProcess):
             "container_id": self.container_id,
             "stats": self.stats,
             "stop_event": self.stop_monitoring_event,
-            "interval": interval
+            "interval": interval,
         }
-        self.monitoring_thread = threading.Thread(target=monitor, kwargs=monitor_args, daemon=True)
+        self.monitoring_thread = threading.Thread(
+            target=monitor, kwargs=monitor_args, daemon=True
+        )
         self.monitoring_thread.start()
 
     def stop_monitoring(self) -> None:

@@ -41,6 +41,13 @@ from ..core.telemetry.metric import (
     FrameworkMetricsRetriever,
 )
 
+from ..experimental.grafana_live_mqtt.exporters import (
+    MQTTMetricExporter,
+    MQTTSpanExporter,
+    MQTTClient,
+)
+from ..experimental.grafana_live_mqtt.live_span_processor import LiveSpanProcessor
+
 from ..core.telemetry.log import SpanAwareLogHandler
 from .util import get_git_info
 
@@ -130,11 +137,14 @@ def build_telemetry_runtime(args: argparse.Namespace) -> TelemetryRuntime:
         otlp_reader = PeriodicExportingMetricReader(exporter=otlp_metric_exporter)
         readers.append(otlp_reader)
 
+    mqtt_client = MQTTClient(broker_port=1883, broker_url="localhost")
     # Add Framework tracing infrastructure
     fw_span_backend = FrameworkSpanBackend()
     fw_span_client = FrameworkSpanRetriever(backend=fw_span_backend)
     fw_spans = FrameworkSpanExporter(backend=fw_span_backend)
     trace_provider.add_span_processor(SimpleSpanProcessor(fw_spans))
+    mqtt_spans = MQTTSpanExporter(mqtt_client)
+    trace_provider.add_span_processor(LiveSpanProcessor(mqtt_spans))
     trace.set_tracer_provider(trace_provider)
 
     # Add Framework metrics infrastructure
@@ -145,6 +155,11 @@ def build_telemetry_runtime(args: argparse.Namespace) -> TelemetryRuntime:
         exporter=fw_metrics, export_interval_millis=100
     )
     readers.append(fw_reader)
+    mqtt_metrics = MQTTMetricExporter(mqtt_client)
+    mqtt_reader = PeriodicExportingMetricReader(
+        exporter=mqtt_metrics, export_interval_millis=100
+    )
+    readers.append(mqtt_reader)
 
     meter_provider = MeterProvider(metric_readers=readers, resource=resource)
     metrics.set_meter_provider(meter_provider)

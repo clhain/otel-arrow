@@ -9,12 +9,15 @@ CPU and memory usage across different deployment environments (Docker, Kubernete
 These tools are used by the monitoring subsystem in the orchestrator to collect meaningful
 performance data and produce standardized test results.
 """
+
 import re
 import threading
 from typing import Dict
 
+
 class ProcessStatsAggregation:
     """Class for aggregation of resource stats"""
+
     min: float
     max: float
     total: float
@@ -42,6 +45,7 @@ class ProcessStatsAggregation:
 
 class ProcessStats:
     """Class for tracking observed process resource utilization stats"""
+
     def __init__(self):
         self.lock = threading.Lock()
         self.cpu = ProcessStatsAggregation()
@@ -58,14 +62,16 @@ class ProcessStats:
             self.cpu.add_sample(cpu_percent)
             self.mem.add_sample(mem_mib)
 
-    def get_summary_string(self, metric_prefix: str, delimiter: str ="/") -> str:
+    def get_summary_string(self, metric_prefix: str, delimiter: str = "/") -> str:
         """Helper method to format min/avg/max stats."""
         summary = self.get_summary()
-        return delimiter.join([
-            f"{summary.get(metric_prefix + '_min', 0.0):.2f}",
-            f"{summary.get(metric_prefix + '_avg', 0.0):.2f}",
-            f"{summary.get(metric_prefix + '_max', 0.0):.2f}"
-        ])
+        return delimiter.join(
+            [
+                f"{summary.get(metric_prefix + '_min', 0.0):.2f}",
+                f"{summary.get(metric_prefix + '_avg', 0.0):.2f}",
+                f"{summary.get(metric_prefix + '_max', 0.0):.2f}",
+            ]
+        )
 
     def get_summary(self) -> Dict[str, float]:
         """Get a summary of observed resource utilization stats"""
@@ -85,13 +91,13 @@ class ProcessStats:
 def parse_mem_to_mib(mem_str: str) -> float:
     """Parse the string returned by docker stats to a float representing the number of MiB in use by the container."""
     units_to_mib = {
-        "kib": 1 / 1024,                   # 1 KiB = 1/1024 MiB
-        "kb": 1000 / 1024 / 1024,          # 1 KB = 1000 bytes convert to MiB
-        "mb": 1000000 / 1024 / 1024,       # 1 MB = 1,000,000 bytes convert to MiB
-        "mi": 1,                           # already MiB
-        "mib": 1,                          # already MiB
-        "gb": 1_000_000_000 / 1024 / 1024, # 1 GB = 1,000,000,000 bytes MiB
-        "gib": 1024                        # 1 GiB = 1024 MiB
+        "kib": 1 / 1024,  # 1 KiB = 1/1024 MiB
+        "kb": 1000 / 1024 / 1024,  # 1 KB = 1000 bytes convert to MiB
+        "mb": 1000000 / 1024 / 1024,  # 1 MB = 1,000,000 bytes convert to MiB
+        "mi": 1,  # already MiB
+        "mib": 1,  # already MiB
+        "gb": 1_000_000_000 / 1024 / 1024,  # 1 GB = 1,000,000,000 bytes MiB
+        "gib": 1024,  # 1 GiB = 1024 MiB
     }
     match = re.match(r"([0-9.]+)([a-zA-Z]+)", mem_str)
     if not match:

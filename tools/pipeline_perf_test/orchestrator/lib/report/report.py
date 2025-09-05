@@ -11,17 +11,15 @@ logs received, and resource usage.
 Used by the orchestration layer to produce post-test summaries and assist in test
 validation and debugging.
 """
+
 import json
 from typing import Tuple
 
 import requests
 
+
 def get_benchmark_json(
-    timestamp,
-    args,
-    logs_failed_count,
-    logs_sent_count,
-    target_process_stats=None
+    timestamp, args, logs_failed_count, logs_sent_count, target_process_stats=None
 ) -> str:
     """Return a JSON string compatible with github-action-benchmark
 
@@ -35,7 +33,9 @@ def get_benchmark_json(
     Returns:
         str: JSON string compatible with github-action-benchmark
     """
-    logs_received_backend_count = get_backend_received_count("http://localhost:5000/metrics")
+    logs_received_backend_count = get_backend_received_count(
+        "http://localhost:5000/metrics"
+    )
 
     # Calculate metrics
     total_logs_attempted = logs_sent_count + logs_failed_count
@@ -44,13 +44,25 @@ def get_benchmark_json(
     loadgen_failed = logs_failed_count
     transit_lost = logs_sent_count - logs_received_backend_count
     total_logs_lost = loadgen_failed + transit_lost
-    logs_lost_percentage = (total_logs_lost / total_logs_attempted * 100) if total_logs_attempted > 0 else 0
+    logs_lost_percentage = (
+        (total_logs_lost / total_logs_attempted * 100)
+        if total_logs_attempted > 0
+        else 0
+    )
 
     # Determine benchmark name based on configuration
     if args.deployment_target == "docker":
-        config_name = args.collector_config.split('/')[-1].replace('.yaml', '').replace('.yml', '')
+        config_name = (
+            args.collector_config.split("/")[-1]
+            .replace(".yaml", "")
+            .replace(".yml", "")
+        )
     else:
-        config_name = args.k8s_collector_manifest.split('/')[-1].replace('.yaml', '').replace('.yml', '')
+        config_name = (
+            args.k8s_collector_manifest.split("/")[-1]
+            .replace(".yaml", "")
+            .replace(".yml", "")
+        )
 
     benchmark_name = f"pipeline-perf-{config_name}"
 
@@ -60,23 +72,23 @@ def get_benchmark_json(
         {
             "name": f"{benchmark_name}-throughput",
             "unit": "logs/sec",
-            "value": logs_sent_rate
+            "value": logs_sent_rate,
         },
         {
             "name": f"{benchmark_name}-logs-sent",
             "unit": "count",
-            "value": logs_sent_count
+            "value": logs_sent_count,
         },
         {
             "name": f"{benchmark_name}-logs-received",
             "unit": "count",
-            "value": logs_received_backend_count
+            "value": logs_received_backend_count,
         },
         {
             "name": f"{benchmark_name}-loss-percentage",
             "unit": "percent",
-            "value": logs_lost_percentage
-        }
+            "value": logs_lost_percentage,
+        },
     ]
 
     # Add CPU and Memory metrics if available
@@ -86,44 +98,49 @@ def get_benchmark_json(
             stats_summary = target_process_stats.get_summary()
             if stats_summary:
                 # Add CPU statistics
-                if 'cpu_avg' in stats_summary:
-                    benchmarks.append({
-                        "name": f"{benchmark_name}-cpu-avg",
-                        "unit": "percent",
-                        "value": round(stats_summary['cpu_avg'], 2)
-                    })
-                if 'cpu_max' in stats_summary:
-                    benchmarks.append({
-                        "name": f"{benchmark_name}-cpu-max",
-                        "unit": "percent",
-                        "value": round(stats_summary['cpu_max'], 2)
-                    })
+                if "cpu_avg" in stats_summary:
+                    benchmarks.append(
+                        {
+                            "name": f"{benchmark_name}-cpu-avg",
+                            "unit": "percent",
+                            "value": round(stats_summary["cpu_avg"], 2),
+                        }
+                    )
+                if "cpu_max" in stats_summary:
+                    benchmarks.append(
+                        {
+                            "name": f"{benchmark_name}-cpu-max",
+                            "unit": "percent",
+                            "value": round(stats_summary["cpu_max"], 2),
+                        }
+                    )
 
                 # Add memory statistics (in MiB)
-                if 'mem_avg' in stats_summary:
-                    benchmarks.append({
-                        "name": f"{benchmark_name}-memory-avg",
-                        "unit": "MiB",
-                        "value": round(stats_summary['mem_avg'], 2)
-                    })
-                if 'mem_max' in stats_summary:
-                    benchmarks.append({
-                        "name": f"{benchmark_name}-memory-max",
-                        "unit": "MiB",
-                        "value": round(stats_summary['mem_max'], 2)
-                    })
+                if "mem_avg" in stats_summary:
+                    benchmarks.append(
+                        {
+                            "name": f"{benchmark_name}-memory-avg",
+                            "unit": "MiB",
+                            "value": round(stats_summary["mem_avg"], 2),
+                        }
+                    )
+                if "mem_max" in stats_summary:
+                    benchmarks.append(
+                        {
+                            "name": f"{benchmark_name}-memory-max",
+                            "unit": "MiB",
+                            "value": round(stats_summary["mem_max"], 2),
+                        }
+                    )
         except (AttributeError, KeyError) as e:
             # If process stats are not available or in unexpected format, continue without them
             print(f"Warning: Unable to extract process stats for benchmarking: {e}")
 
     return json.dumps(benchmarks, indent=2)
 
+
 def get_report_string(
-    timestamp,
-    args,
-    logs_failed_count,
-    logs_sent_count,
-    target_process_stats=None
+    timestamp, args, logs_failed_count, logs_sent_count, target_process_stats=None
 ) -> None:
     """Return a string representing a loadtest report
 
@@ -135,7 +152,9 @@ def get_report_string(
         - target_process_stats: CPU and Memory stats for the target process
     """
 
-    logs_received_backend_count = get_backend_received_count("http://localhost:5000/metrics")
+    logs_received_backend_count = get_backend_received_count(
+        "http://localhost:5000/metrics"
+    )
 
     # Calculate total logs lost (including those that failed at loadgen side and those lost in transit)
     # Logs that failed at loadgen side
@@ -160,7 +179,11 @@ def get_report_string(
         formatted_rate = f"{logs_sent_rate:.2f}/sec"
 
     # Calculate percentage of logs lost
-    logs_lost_percentage = (total_logs_lost / total_logs_attempted * 100) if total_logs_attempted > 0 else 0
+    logs_lost_percentage = (
+        (total_logs_lost / total_logs_attempted * 100)
+        if total_logs_attempted > 0
+        else 0
+    )
 
     lines = []
     lines.append(f"Performance test run at: {timestamp}")
@@ -182,13 +205,21 @@ def get_report_string(
     lines.append(f"- Logs received by backend: {logs_received_backend_count}")
     lines.append(f"- Logs lost in transit: {transit_lost}")
     lines.append(f"- Duration: {args.duration:.2f} seconds")
-    lines.append(f"- Logs attempt rate: {formatted_rate} ({logs_sent_rate:.2f} logs/second)")
-    lines.append(f"- Total logs lost: {total_logs_lost} (failed at loadgen + lost in transit)")
+    lines.append(
+        f"- Logs attempt rate: {formatted_rate} ({logs_sent_rate:.2f} logs/second)"
+    )
+    lines.append(
+        f"- Total logs lost: {total_logs_lost} (failed at loadgen + lost in transit)"
+    )
     lines.append(f"- Percentage of logs lost: {logs_lost_percentage:.2f}%")
 
     if target_process_stats:
-        lines.append(f"- CPU (#Cores) min/avg/max: {target_process_stats.get_summary_string('cpu')}")
-        lines.append(f"- Memory (MiB) min/avg/max: {target_process_stats.get_summary_string('mem')}")
+        lines.append(
+            f"- CPU (#Cores) min/avg/max: {target_process_stats.get_summary_string('cpu')}"
+        )
+        lines.append(
+            f"- Memory (MiB) min/avg/max: {target_process_stats.get_summary_string('mem')}"
+        )
 
     return "\n".join(lines)
 

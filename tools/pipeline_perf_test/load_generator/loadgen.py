@@ -79,10 +79,94 @@ from pydantic import BaseModel, Field, field_validator, ValidationError
 FLASK_PORT = 5001
 LOG_SEVERITY_NUMBER = logs_pb2.SeverityNumber.SEVERITY_NUMBER_INFO
 LOG_SEVERITY_TEXT = "INFO"
-
+METRICS_INERVAL=0.5
 
 app = Flask(__name__)
 
+
+import random
+from datetime import datetime as dt, timezone
+
+class SyslogGenerator:
+    def __init__(self):
+        # Predefined lists of hostnames, paths, etc.
+        self.hostnames = [
+            "nginx.f5kc.com", "api.service.local", "internal.dev.net",
+            "frontend.webapp.io", "backend.processor"
+        ]
+        self.paths = [
+            "/api/v1/orders", "/api/v2/users", "/health", "/login", "/logout", "/metrics"
+        ]
+        self.content_types = [
+            "application/json", "application/octet-stream", "text/html", "application/xml"
+        ]
+        self.user_agents = [
+            "python-requests/2.32.3", "curl/7.79.1", "PostmanRuntime/7.32.2",
+            "Mozilla/5.0", "Go-http-client/1.1"
+        ]
+
+    def generate_random_string(self, length):
+        return ''.join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=length))
+
+    def create_syslog_message(
+        self,
+        hostname: str = None,
+        body_size: int = 25,
+        syslog_server: str = "rust-engine"
+    ) -> bytes:
+        pri = "<134>"
+        tag = "loadgen"
+        utc_time = dt.now(timezone.utc)
+        timestamp = utc_time.strftime(f"%b {utc_time.day:2d} %H:%M:%S")
+
+        # Randomize fields
+        hostname = hostname or random.choice(self.hostnames)
+        uri = random.choice(self.paths)
+        sanitized_path = '/'.join(uri.split('/')[:3]) + '/'  # crude sanitized path
+        status = random.choice([200, 201, 400, 404, 500])
+        req_size = random.randint(100, 1000)
+        resp_size = random.randint(20, 500)
+        total_ms = random.randint(10, 1000)
+        ttfb_ms = random.randint(1, total_ms)
+        server_ms = random.randint(1, 100)
+        ssl_ms = random.randint(1, 100)
+        tcp_rtt_ms = random.randint(10, 3000)
+        client_ip = f"10.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
+        server_addr = f"10.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
+        content_type = random.choice(self.content_types)
+        user_agent = random.choice(self.user_agents)
+        req_headers = f"Host:{hostname},User-Agent:{user_agent},Accept-Encoding:gzip,deflate,Accept:*/*,Connection:keep-alive,Content-Type:{content_type},Content-Length:{req_size}"
+
+        if syslog_server == "rust-engine" or syslog_server == "localhost" :
+            log_message = (
+                f"CEF:0|Security|threatmanager|1.0|100|worm successfully stopped|10|"
+                f"method=POST host={hostname} uri={uri} sanitized_path={sanitized_path} "
+                f"status={status} req_size={req_size} resp_size={resp_size} total_ms={total_ms} "
+                f"ttfb_ms={ttfb_ms} server_ms={server_ms} ssl_ms={ssl_ms} tcp_rtt_ms={tcp_rtt_ms} "
+                f"client_ip={client_ip} client_type=python "
+                f"vs_name=/Common/{hostname}-https pool_name=/Common/appstudy_pool_member "
+                f"server_addr={server_addr} content_type={content_type} "
+                f"server_header=nginx/1.27.1 powered_by=none "
+                f"req_headers={req_headers} req_headers_filtered=4 resp_headers_filtered=0 "
+                f"tls_version=TLSv1.2 tls_bits=128"
+            )
+            return log_message.encode('utf-8')
+        else:
+            log_message = (
+                f"cef.version=0|cef.device_vendor=Security|cef.device_product=threatmanager|"
+                f"cef.device_version=1.0|vef.signature_id=100|cef.name=worm successfully stopped|"
+                f"cef.severity=10|method=POST|host={hostname}|uri={uri}|sanitized_path={sanitized_path}|"
+                f"status={status}|req_size={req_size}|resp_size={resp_size}|total_ms={total_ms}|"
+                f"ttfb_ms={ttfb_ms}|server_ms={server_ms}|ssl_ms={ssl_ms}|tcp_rtt_ms={tcp_rtt_ms}|"
+                f"client_ip={client_ip}|client_type=python|vs_name=/Common/{hostname}-https|"
+                f"pool_name=/Common/appstudy_pool_member|server_addr={server_addr}|"
+                f"content_type={content_type}|server_header=nginx/1.27.1|powered_by=none|"
+                f"req_headers={req_headers}|req_headers_filtered=4|resp_headers_filtered=0|"
+                f"tls_version=TLSv1.2|tls_bits=128"
+            )
+
+        syslog_message = f"{pri}{timestamp} {hostname} {tag}: {log_message}\n"
+        return syslog_message.encode('utf-8')
 
 class LoadGenConfig(BaseModel):
     body_size: int = Field(
@@ -128,6 +212,7 @@ class LoadGenerator:
         self.current_config = {}
         self.lock = threading.Lock()
         self.metrics = {"sent": 0, "failed": 0, "bytes_sent": 0, "late_batches": 0}
+        self.generator = SyslogGenerator()
 
     def generate_random_string(self, length: int) -> str:
         """
@@ -146,7 +231,7 @@ class LoadGenerator:
         """
         Create a single OTLP log record with random content.
         """
-        log_message = self.generate_random_string(body_size)
+        log_message = "CEF:timestamp=1753962396400|method=POST|host=nginx.f5kc.com|uri=/api/v1/orders|sanitized_path=/api/v1/|status=200|req_size=341|resp_size=31|total_ms=17|ttfb_ms=1|server_ms=1|ssl_ms=38|tcp_rtt_ms=1398|client_ip=10.5.5.2|client_type=python|vs_name=/Common/nginx.f5kc.com-https|pool_name=/Common/appstudy_pool_member|server_addr=10.14.2.200|content_type=application/octet-stream|server_header=nginx/1.27.1|powered_by=none|req_headers=Host:nginx.f5kc.com,User-Agent:python-requests/2.32.3,Accept-Encoding:gzip, deflate,Accept:*/*,Connection:keep-alive,Content-Type:application/json,Content-Length:341|req_headers_filtered=4|resp_headers_filtered=0|tls_version=TLSv1.2|tls_bits=128"
         attributes = [
             common_pb2.KeyValue(
                 key=f"attribute.{i+1}",
@@ -173,7 +258,7 @@ class LoadGenerator:
         with self.lock:
             for key, amount in updates.items():
                 if key in self.metrics:
-                    self.metrics[key] += amount
+                    self.metrics[key] = amount
 
     def worker_thread(self, thread_id: int, args: dict) -> None:
         """
@@ -230,6 +315,7 @@ class LoadGenerator:
         total_late_batches = 0
 
         next_send_time = time.perf_counter()
+        next_metric_time = time.perf_counter()
         while not self.stop_event.is_set():
             try:
                 stub.Export(logs_request)
@@ -239,6 +325,15 @@ class LoadGenerator:
                 print(f"Thread {thread_id}: Failed to send log batch: {e}")
                 total_failed += args["batch_size"]
 
+            now = time.perf_counter()
+            if next_metric_time - now < 0:
+                self.update_metrics(**{
+                    "sent": total_sent,
+                    "bytes_sent": total_bytes_sent,
+                    "failed": total_failed,
+                    "late_batches": total_late_batches
+                })
+                next_metric_time = now + METRICS_INERVAL
             # If we're targeting a specific rate we do additional calculations
             # to ensure we're not exceeding it via sleep. If we're not reaching
             # the target rate (e.g. we're sending without sleep and it's
@@ -306,7 +401,8 @@ class LoadGenerator:
         for _ in range(batch_size):
             syslog_message = self.create_syslog_message(
                 hostname=hostname,
-                body_size=args["body_size"]
+                body_size=args["body_size"],
+                syslog_server=syslog_server
             )
             syslog_batch.append(syslog_message)
 
@@ -321,6 +417,7 @@ class LoadGenerator:
         total_late_batches = 0
 
         next_send_time = time.perf_counter()
+        next_metric_time = time.perf_counter()
         while not self.stop_event.is_set():
             try:
                 sock.sendall(batch_buffer)
@@ -339,6 +436,15 @@ class LoadGenerator:
                     print(f"Thread {thread_id}: Reconnection failed: {reconnect_error}")
                     break
 
+            now = time.perf_counter()
+            if next_metric_time - now < 0:
+                self.update_metrics(**{
+                    "sent": total_sent,
+                    "bytes_sent": total_bytes_sent,
+                    "failed": total_failed,
+                    "late_batches": total_late_batches
+                })
+                next_metric_time = now + METRICS_INERVAL
             # If we're targeting a specific rate we do additional calculations
             # to ensure we're not exceeding it via sleep. If we're not reaching
             # the target rate (e.g. we're sending without sleep and it's
@@ -408,6 +514,7 @@ class LoadGenerator:
             syslog_message = self.create_syslog_message(
                 hostname=hostname,
                 body_size=args["body_size"],
+                syslog_server=syslog_server
             )
             syslog_batch.append(syslog_message)
 
@@ -418,6 +525,7 @@ class LoadGenerator:
         total_late_batches = 0
 
         next_send_time = time.perf_counter()
+        next_metric_time = time.perf_counter()
         while not self.stop_event.is_set():
             # UDP: Send individual messages instead of single batch of messages
             for message in syslog_batch:
@@ -430,6 +538,16 @@ class LoadGenerator:
                     # Only print first few errors to avoid spam
                     if total_failed <= 3:
                         print(f"Thread {thread_id}: Failed to send syslog message via UDP: {e}")
+
+            now = time.perf_counter()
+            if next_metric_time - now < 0:
+                self.update_metrics(**{
+                    "sent": total_sent,
+                    "bytes_sent": total_bytes_sent,
+                    "failed": total_failed,
+                    "late_batches": total_late_batches
+                })
+                next_metric_time = now + METRICS_INERVAL
 
             # Rate limiting logic
             if batch_interval:
@@ -461,6 +579,7 @@ class LoadGenerator:
         self,
         hostname: str,
         body_size: int = 25,
+        syslog_server: str = "rust-engine"
     ) -> bytes:
         """
         Create a single syslog message with structure similar to OTLP log record.
@@ -475,10 +594,16 @@ class LoadGenerator:
         timestamp = utc_time.strftime(f"%b {day:2d} %H:%M:%S")
 
         # Create log message body (similar to OTLP body)
-        log_message = self.generate_random_string(body_size)
-
-        syslog_message = f"{pri}{timestamp} {hostname} {tag}: {log_message}\n"
-        return syslog_message.encode('utf-8')
+        #log_message = self.generate_random_string(body_size)
+        return  self.generator.create_syslog_message(syslog_server=syslog_server)
+        # if syslog_server == "rust-engine":
+        #     log_message = self.generator.create_syslog_message(syslog_server=syslog_server)
+        #     #log_message = "CEF:0|Security|threatmanager|1.0|100|worm successfully stopped|10|method=POST host=nginx.f5kc.com uri=/api/v1/orders sanitized_path=/api/v1/ status=200 req_size=341 resp_size=31 total_ms=17 ttfb_ms=1 server_ms=1 ssl_ms=38 tcp_rtt_ms=1398 client_ip=10.5.5.2 client_type=python vs_name=/Common/nginx.f5kc.com-https pool_name=/Common/appstudy_pool_member server_addr=10.14.2.200 content_type=application/octet-stream server_header=nginx/1.27.1 powered_by=none req_headers=Host:nginx.f5kc.com,User-Agent:python-requests/2.32.3,Accept-Encoding:gzip, deflate,Accept:*/*,Connection:keep-alive,Content-Type:application/json,Content-Length:341 req_headers_filtered=4 resp_headers_filtered=0 tls_version=TLSv1.2 tls_bits=128"
+        #     return log_message.encode('utf-8')
+        # log_message = "cef.version=0|cef.device_vendor=Security|cef.device_product=threatmanager|cef.device_version=1.0|vef.signature_id=100|cef.name=worm successfully stopped|cef.severity=10|method=POST|host=nginx.f5kc.com|uri=/api/v1/orders|sanitized_path=/api/v1/|status=200|req_size=341|resp_size=31|total_ms=17|ttfb_ms=1|server_ms=1|ssl_ms=38|tcp_rtt_ms=1398|client_ip=10.5.5.2|client_type=python|vs_name=/Common/nginx.f5kc.com-https|pool_name=/Common/appstudy_pool_member|server_addr=10.14.2.200|content_type=application/octet-stream|server_header=nginx/1.27.1|powered_by=none|req_headers=Host:nginx.f5kc.com,User-Agent:python-requests/2.32.3,Accept-Encoding:gzip,deflate,Accept:*/*,Connection:keep-alive,Content-Type:application/json,Content-Length:341|req_headers_filtered=4|resp_headers_filtered=0|tls_version=TLSv1.2|tls_bits=128"
+        # log_message = self.generator.create_syslog_message(syslog_server=syslog_server)
+        # syslog_message = f"{pri}{timestamp} {hostname} {tag}: {log_message}\n"
+        # return syslog_message.encode('utf-8')
 
     def run_loadgen(self, args_dict):
         """

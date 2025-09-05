@@ -11,6 +11,7 @@ handle port forwarding, and run Kubernetes-based load generators. It abstracts t
 These functions are intended to support orchestration of performance testing scenarios on Kubernetes
 clusters.
 """
+
 import os
 import subprocess
 import time
@@ -19,7 +20,10 @@ from typing import Tuple
 from ..deployed_process.kubernetes import K8sDeployedResource
 from ...report.report import parse_logs_for_sent_count
 
-def deploy_kubernetes_resources(manifest_path: str, deployment_name: str, namespace: str = "default") -> K8sDeployedResource:
+
+def deploy_kubernetes_resources(
+    manifest_path: str, deployment_name: str, namespace: str = "default"
+) -> K8sDeployedResource:
     """
     Deploy resources to Kubernetes using kubectl apply
 
@@ -31,7 +35,9 @@ def deploy_kubernetes_resources(manifest_path: str, deployment_name: str, namesp
     Returns:
         K8sDeployedResource: Object representing the deployed resources
     """
-    print(f"Deploying '{deployment_name}' to Kubernetes using manifest: {manifest_path}...")
+    print(
+        f"Deploying '{deployment_name}' to Kubernetes using manifest: {manifest_path}..."
+    )
 
     try:
         # Apply the manifest to create the resources
@@ -43,12 +49,13 @@ def deploy_kubernetes_resources(manifest_path: str, deployment_name: str, namesp
         return K8sDeployedResource(
             deployment_name=deployment_name,
             manifest_path=manifest_path,
-            namespace=namespace
+            namespace=namespace,
         )
     except subprocess.CalledProcessError as e:
         print(f"Error deploying Kubernetes resources: {e}")
         print(f"Error output: {e.stderr}")
         raise
+
 
 def get_k8s_logs(pod_selector: str, namespace: str = "default") -> str:
     """
@@ -63,8 +70,17 @@ def get_k8s_logs(pod_selector: str, namespace: str = "default") -> str:
     """
     try:
         # First, get the pod name matching the selector
-        cmd = ["kubectl", "get", "pods", "-l", pod_selector, "-n", namespace,
-               "-o", "jsonpath={.items[0].metadata.name}"]
+        cmd = [
+            "kubectl",
+            "get",
+            "pods",
+            "-l",
+            pod_selector,
+            "-n",
+            namespace,
+            "-o",
+            "jsonpath={.items[0].metadata.name}",
+        ]
         pod_name = subprocess.check_output(cmd, text=True).strip()
 
         if not pod_name:
@@ -77,11 +93,15 @@ def get_k8s_logs(pod_selector: str, namespace: str = "default") -> str:
         return logs
     except subprocess.CalledProcessError as e:
         print(f"Error getting pod logs: {e}")
-        print(f"Error output: {e.stderr if hasattr(e, 'stderr') else 'No error output'}")
+        print(
+            f"Error output: {e.stderr if hasattr(e, 'stderr') else 'No error output'}"
+        )
         return ""
 
 
-def setup_k8s_port_forwarding(service_name: str, namespace: str, local_port: int, remote_port: int) -> subprocess.Popen:
+def setup_k8s_port_forwarding(
+    service_name: str, namespace: str, local_port: int, remote_port: int
+) -> subprocess.Popen:
     """
     Set up port forwarding from a local port to a service in Kubernetes.
 
@@ -94,22 +114,23 @@ def setup_k8s_port_forwarding(service_name: str, namespace: str, local_port: int
     Returns:
         subprocess.Popen: The process object for the port forwarding command
     """
-    print(f"Setting up port forwarding from localhost:{local_port} to {service_name}:{remote_port} in namespace {namespace}...")
+    print(
+        f"Setting up port forwarding from localhost:{local_port} to {service_name}:{remote_port} in namespace {namespace}..."
+    )
 
     # Build the kubectl port-forward command
     cmd = [
-        "kubectl", "port-forward",
+        "kubectl",
+        "port-forward",
         f"service/{service_name}",
         f"{local_port}:{remote_port}",
-        "-n", namespace
+        "-n",
+        namespace,
     ]
 
     # Start the port forwarding in a subprocess
     process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
 
     # Give it a moment to establish the connection
@@ -125,6 +146,7 @@ def setup_k8s_port_forwarding(service_name: str, namespace: str, local_port: int
     print(f"Port forwarding established successfully")
     return process
 
+
 def create_k8s_namespace(namespace: str) -> bool:
     """
     Create a Kubernetes namespace if it doesn't exist
@@ -139,7 +161,14 @@ def create_k8s_namespace(namespace: str) -> bool:
 
     try:
         # Check if the namespace already exists
-        check_cmd = ["kubectl", "get", "namespace", namespace, "--no-headers", "--ignore-not-found"]
+        check_cmd = [
+            "kubectl",
+            "get",
+            "namespace",
+            namespace,
+            "--no-headers",
+            "--ignore-not-found",
+        ]
         result = subprocess.run(check_cmd, check=True, capture_output=True, text=True)
 
         if namespace in result.stdout:
@@ -157,7 +186,14 @@ def create_k8s_namespace(namespace: str) -> bool:
         print(f"Error output: {e.stderr}")
         return False
 
-def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_collector_resource: K8sDeployedResource, loadgen_image: str) -> Tuple[int, int, float]:
+
+def run_k8s_loadgen(
+    loadgen_manifest: str,
+    namespace: str,
+    duration: int,
+    k8s_collector_resource: K8sDeployedResource,
+    loadgen_image: str,
+) -> Tuple[int, int, float]:
     """
     Deploy and run the load generator in Kubernetes and return the counts of logs and duration
 
@@ -176,7 +212,7 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
 
     # Modify the manifest to set the correct duration and image
     # Read the manifest
-    with open(loadgen_manifest, 'r') as f:
+    with open(loadgen_manifest, "r") as f:
         manifest_content = f.read()
 
     # Replace the {{DURATION}} placeholder with the actual duration
@@ -188,13 +224,15 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
     print(f"Setting loadgen duration to {duration}s")
 
     # Write to a temporary file
-    with open(temp_manifest, 'w') as f:
+    with open(temp_manifest, "w") as f:
         f.write(updated_manifest)
 
     start_time = time.time()
 
     # Deploy load generator
-    loadgen_resource = deploy_kubernetes_resources(temp_manifest, "otel-loadgen", namespace)
+    loadgen_resource = deploy_kubernetes_resources(
+        temp_manifest, "otel-loadgen", namespace
+    )
 
     # Wait for the load generator job to complete
     print(f"Waiting for loadgen job to complete (expected duration: {duration}s)...")
@@ -213,8 +251,16 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
 
     while not completed and (time.time() - wait_start) < max_wait:
         try:
-            cmd = ["kubectl", "get", "job", "otel-loadgen", "-n", namespace,
-                  "-o", "jsonpath={.status.succeeded}"]
+            cmd = [
+                "kubectl",
+                "get",
+                "job",
+                "otel-loadgen",
+                "-n",
+                namespace,
+                "-o",
+                "jsonpath={.status.succeeded}",
+            ]
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
             if result.stdout.strip() == "1":
                 completed = True
@@ -229,7 +275,9 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
     k8s_collector_resource.stop_monitoring()
 
     if not completed:
-        print("Warning: Load generator job didn't complete in the expected time, getting logs anyway")
+        print(
+            "Warning: Load generator job didn't complete in the expected time, getting logs anyway"
+        )
 
     # Get logs from the loadgen pod
     logs = get_k8s_logs("app=loadgen", namespace)
@@ -243,7 +291,9 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
     if logs_sent == 0:
         print(f"Could not find LOADGEN_LOGS_SENT in logs")
     else:
-        print(f"Load generator completed. Sent {logs_sent} logs, Failed {logs_failed} logs in {actual_duration:.2f}s")
+        print(
+            f"Load generator completed. Sent {logs_sent} logs, Failed {logs_failed} logs in {actual_duration:.2f}s"
+        )
 
     # Clean up the temporary manifest
     try:
@@ -252,4 +302,3 @@ def run_k8s_loadgen(loadgen_manifest: str, namespace: str, duration: int, k8s_co
         pass
 
     return logs_sent, logs_failed, actual_duration
-

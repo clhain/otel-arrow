@@ -1,0 +1,38 @@
+receivers:
+  syslog/udp:
+    protocol: rfc3164
+    udp:
+      listen_address: "0.0.0.0:4317"
+
+exporters:
+  otlp:
+    endpoint: '{{backend_hostname}}:1235'
+    tls:
+      insecure: true
+  debug:
+    verbosity: detailed
+
+processors:
+  transform:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(log.body, ExtractPatterns(log.body, "^(<(?P<priority>\\d+)>)?(?P<timestamp>\\w+\\s{1,2}\\d{1,2}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\s+(?P<hostname>[^\\s]+)\\s+(?:(?P<process>[^\\s\\[:]+)(?:\\[(?P<pid>\\d+)\\])?:\\s+)?(?P<message>.*)")) where not IsMap(body) and IsMatch(body, "^<\\d+>\\w+\\s+\\d{1,2}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+[^\\s]+\\s+[^\\s:]*?:?\\s*.*")
+          - merge_maps(log.attributes, ParseKeyValue(log.attributes["message"], "=", "|"), "upsert")
+          - delete_key(log.attributes, "message")
+
+service:
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 8086
+  pipelines:
+    logs:
+      receivers: [syslog/udp]
+      processors: [transform]
+      exporters: [otlp]

@@ -52,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Enable OpenTelemetry metrics export to external otlp endpoint",
     )
     otlp.add_argument(
+        "--save-telemetry",
+        action="store_true",
+        help="Save the telemetry dataframes for the suite after execution",
+    )
+    otlp.add_argument(
         "--print-spans",
         action="store_true",
         help="Print the span dataframe for the suite after execution",

@@ -1,0 +1,165 @@
+name: Demo Suite
+components:
+  load-generator:
+    deployment:
+      docker:
+        image: df_engine:latest
+        network: testbed
+        ports:
+          - "8085:8080"
+        # Build doesn't support extra contexts, which are currently needed to get the protos compiled.
+        # run the docker build as an external step for now.
+        # e.g. - from the ../../rust/otap-dataflow dir:
+        # $ docker build --build-context otel-arrow=../../ -f Dockerfile -t df_engine .
+        # build:
+        #   context: ../../rust/otap-dataflow/
+        #   ags:
+        ###   This doesn't work.
+        #     build-context: 'otel-arrow=../../'
+        volumes:
+          - 'test_suites/tech_summit/configs/loadgen/config.rendered.yaml:/home/dataflow/config.yaml:ro'
+        command:
+          - "--pipeline"
+          - "./config.yaml"
+          - "--core-id-range"
+          - "2-2"
+          - "--http-admin-bind"
+          - "0.0.0.0:8080"
+    monitoring:
+      docker_component: {}
+      prometheus:
+        endpoint: http://localhost:8085/telemetry/metrics?format=prometheus&reset=false
+  syslog-generator:
+    deployment:
+      docker:
+        image: load_generator:latest
+        network: testbed
+        command: ["--serve"]
+        environment:
+          # overriden in test steps
+          - SYSLOG_SERVER=localhost
+          - SYSLOG_PORT=4317
+          - SYSLOG_TRANSPORT=udp
+        ports:
+          - "5001:5001"
+        build:
+          context: ./load_generator
+    execution:
+      pipeline_perf_loadgen:
+        threads: 1
+        target_rate: 4000
+        batch_size: 1000
+        load_type: syslog
+    monitoring:
+      docker_component: {}
+      prometheus:
+        endpoint: http://localhost:5001/metrics
+  rust-engine:
+    deployment:
+      docker:
+        image: df_engine:latest
+        network: testbed
+        ports:
+          - "8086:8080"
+        volumes:
+          - 'test_suites/tech_summit/configs/engine/config.rendered.yaml:/home/dataflow/config.yaml:ro'
+        command:
+          - "--pipeline"
+          - "./config.yaml"
+          - "--core-id-range"
+          - "0-0"
+          - "--http-admin-bind"
+          - "0.0.0.0:8080"
+    monitoring:
+      docker_component: {}
+      prometheus:
+        endpoint: http://localhost:8086/telemetry/metrics?format=prometheus&reset=false
+  go-collector:
+    deployment:
+      docker:
+        image: otelarrowcol:latest
+        network: testbed
+        ports:
+          - "8086:8086"
+        volumes:
+          - './test_suites/tech_summit/configs/otelcol/config.rendered.yaml:/tmp/config.yaml:ro'
+        environment:
+          - GOMAXPROCS=1
+        command:
+          - "--config"
+          - "/tmp/config.yaml"
+    monitoring:
+      docker_component: {}
+      prometheus:
+        endpoint: http://localhost:8086/metrics
+  backend-service:
+    deployment:
+      docker:
+        image: df_engine:latest
+        network: testbed
+        ports:
+          - "8087:8080"
+        volumes:
+          - 'test_suites/tech_summit/configs/backend/config.rendered.yaml:/home/dataflow/config.yaml:ro'
+        command:
+          - "--pipeline"
+          - "./config.yaml"
+          - "--core-id-range"
+          - "1-1"
+          - "--http-admin-bind"
+          - "0.0.0.0:8080"
+    monitoring:
+      docker_component: {}
+      prometheus:
+        endpoint: http://localhost:8087/telemetry/metrics?format=prometheus&reset=false
+
+tests:
+  # - name: OTLP-OTLP (Go Collector)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
+  #     variables:
+  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otlp-otlp.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
+  # - name: OTLP-OTLP (Rust Engine)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
+  # - name: OTLP-OTLP (Rust Engine - Passthrough)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
+  # - name: OTAP-OTAP (Go Collector)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
+  #     variables:
+  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otap-otap.yaml
+  #       loadgen_exporter_type: otap
+  #       backend_receiver_type: otap
+  # - name: OTAP-OTAP (Rust Engine)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otap-otap.yaml
+  #       loadgen_exporter_type: otap
+  #       backend_receiver_type: otap
+
+  - name: SYSLOG-OTLP (Go Collector)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel-syslog.yaml
+      variables:
+        collector_config_template: test_suites/tech_summit/templates/configs/otelcol/syslog-otlp.yaml
+        backend_receiver_type: otlp
+
+  - name: SYSLOG-OTAP (Rust Engine)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df-syslog.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/syslog-otap.yaml
+        backend_receiver_type: otap

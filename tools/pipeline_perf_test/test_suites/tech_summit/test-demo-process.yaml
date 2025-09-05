@@ -1,0 +1,111 @@
+name: Demo Suite
+components:
+  load-generator:
+    deployment:
+      process:
+        command: >
+          ../../../otel-arrow/rust/otap-dataflow/target/release/df_engine
+            --core-id-range 1-1
+            --pipeline test_suites/tech_summit/configs/loadgen/config.rendered.yaml
+            --http-admin-bind 127.0.0.1:8085
+    monitoring:
+      process_component: {}
+      prometheus:
+        endpoint: http://localhost:8085/telemetry/metrics?reset=false&format=prometheus
+  syslog-generator:
+    deployment:
+      process:
+        command: python ./load_generator/loadgen.py --serve
+        environment:
+          - SYSLOG_SERVER=localhost
+          - SYSLOG_PORT=4317
+          - SYSLOG_TRANSPORT=udp
+    execution:
+      pipeline_perf_loadgen:
+        threads: 1
+        target_rate: 4
+        batch_size: 4
+        load_type: syslog
+    monitoring:
+      process_component: {}
+      prometheus:
+        endpoint: http://localhost:5001/metrics
+  rust-engine:
+    deployment:
+      process:
+        command: >
+          ../../../otel-arrow/rust/otap-dataflow/target/release/df_engine
+            --core-id-range 2-2
+            --pipeline test_suites/tech_summit/configs/engine/config.rendered.yaml
+            --http-admin-bind 127.0.0.1:8086
+    monitoring:
+      process_component: {}
+      prometheus:
+        endpoint: http://localhost:8086/telemetry/metrics?reset=false&format=prometheus
+  go-collector:
+    deployment:
+      process:
+        command: ../../bin/otelarrowcol --config ./test_suites/tech_summit/configs/otelcol/config.rendered.yaml
+        #command: otelcol-contrib --config ./test_suites/tech_summit/configs/otelcol/config.rendered.yaml
+        environment:
+          - GOMAXPROCS=1
+    monitoring:
+      process_component: {}
+      prometheus:
+        endpoint: http://localhost:8086/metrics
+  backend-service:
+    deployment:
+      process:
+        command: >
+          ../../../otel-arrow/rust/otap-dataflow/target/release/df_engine
+            --core-id-range 0-0
+            --pipeline test_suites/tech_summit/configs/backend/config.rendered.yaml
+            --http-admin-bind 127.0.0.1:8087
+    monitoring:
+      process_component: {}
+      prometheus:
+        endpoint: http://localhost:8087/telemetry/metrics?reset=false&format=prometheus
+
+tests:
+  # - name: OTLP-OTLP (Go Collector)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-process-otel.yaml
+  #     variables:
+  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otlp-otlp.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
+  # - name: OTLP-OTLP (Rust Engine)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-process-df.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
+  - name: OTAP-OTAP (Go Collector)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-process-otel.yaml
+      variables:
+        collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otap-otap.yaml
+        loadgen_exporter_type: otap
+        backend_receiver_type: otap
+  - name: OTAP-OTAP (Rust Engine)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-process-df.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/otap-otap.yaml
+        loadgen_exporter_type: otap
+        backend_receiver_type: otap
+
+  # - name: SYSLOG-OTLP (Go Collector)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-process-otel-syslog.yaml
+  #     variables:
+  #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/syslog-otlp.yaml
+  #       backend_receiver_type: otlp
+
+  # - name: SYSLOG-OTAP (Rust Engine)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-process-df-syslog.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/syslog-otap.yaml
+  #       backend_receiver_type: otap
