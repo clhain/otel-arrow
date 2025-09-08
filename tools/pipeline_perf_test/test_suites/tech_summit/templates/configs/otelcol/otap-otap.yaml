@@ -10,7 +10,9 @@ exporters:
     verbosity: detailed
   otelarrow:
     endpoint: '{{backend_hostname}}:1235'
-    compression: gzip
+    compression: none
+    arrow:
+      payload_compression: zstd
     tls:
       insecure: true
 

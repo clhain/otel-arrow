@@ -24,7 +24,7 @@ nodes:
     plugin_urn: "urn:otel:otap:exporter"
     config:
       grpc_endpoint: "http://{{engine_hostname}}:4317"
-      compression_method: Gzip
+      compression_method: Zstd
   {% elif loadgen_exporter_type == "otlp" %}
   exporter:
     kind: exporter

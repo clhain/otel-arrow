@@ -47,7 +47,7 @@ components:
     execution:
       pipeline_perf_loadgen:
         threads: 1
-        target_rate: 4000
+        target_rate: 2000
         batch_size: 1000
         load_type: syslog
     monitoring:
@@ -67,7 +67,7 @@ components:
           - "--pipeline"
           - "./config.yaml"
           - "--core-id-range"
-          - "0-0"
+          - "3-3"
           - "--http-admin-bind"
           - "0.0.0.0:8080"
     monitoring:

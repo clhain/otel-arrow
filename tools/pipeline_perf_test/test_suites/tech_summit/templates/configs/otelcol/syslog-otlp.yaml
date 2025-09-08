@@ -21,6 +21,7 @@ processors:
           - set(log.body, ExtractPatterns(log.body, "^(<(?P<priority>\\d+)>)?(?P<timestamp>\\w+\\s{1,2}\\d{1,2}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\s+(?P<hostname>[^\\s]+)\\s+(?:(?P<process>[^\\s\\[:]+)(?:\\[(?P<pid>\\d+)\\])?:\\s+)?(?P<message>.*)")) where not IsMap(body) and IsMatch(body, "^<\\d+>\\w+\\s+\\d{1,2}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+[^\\s]+\\s+[^\\s:]*?:?\\s*.*")
           - merge_maps(log.attributes, ParseKeyValue(log.attributes["message"], "=", "|"), "upsert")
           - delete_key(log.attributes, "message")
+          - set(log.body, "")
 
 service:
   telemetry:

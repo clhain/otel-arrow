@@ -13,6 +13,7 @@ nodes:
         dispatch_strategy: round_robin
     config:
       listening_addr: "0.0.0.0:4317"
+      protocol: Udp
 
   attr:
     kind: processor
@@ -43,4 +44,4 @@ nodes:
     plugin_urn: "urn:otel:otap:exporter"
     config:
       grpc_endpoint: "http://{{backend_hostname}}:1235"
-      compression_method: Gzip
+      compression_method: Zstd

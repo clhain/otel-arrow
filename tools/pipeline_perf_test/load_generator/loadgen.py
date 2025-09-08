@@ -131,11 +131,11 @@ class SyslogGenerator:
         server_ms = random.randint(1, 100)
         ssl_ms = random.randint(1, 100)
         tcp_rtt_ms = random.randint(10, 3000)
-        client_ip = f"10.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
-        server_addr = f"10.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
+        client_ip = f"10.2.1.{random.randint(1,5)}"
+        server_addr = f"10.1.1.{random.randint(1,5)}"
         content_type = random.choice(self.content_types)
         user_agent = random.choice(self.user_agents)
-        req_headers = f"Host:{hostname},User-Agent:{user_agent},Accept-Encoding:gzip,deflate,Accept:*/*,Connection:keep-alive,Content-Type:{content_type},Content-Length:{req_size}"
+        req_headers = f"Host:{hostname},User-Agent:{user_agent},Accept-Encoding:gzip,deflate,Accept:*/*,Connection:keep-alive,Content-Type:{content_type}"
 
         if syslog_server == "rust-engine" or syslog_server == "localhost" :
             log_message = (
@@ -713,7 +713,7 @@ def stop():
 def metrics_endpoint():
     metrics = loadgen.get_metrics()
     lines = [f"{k} {v}" for k, v in metrics.items()]
-    return "\n".join(lines), 200
+    return "\n".join(lines).replace('sent', 'logs_produced'), 200
 
 
 def handle_signal(sig, frame):
