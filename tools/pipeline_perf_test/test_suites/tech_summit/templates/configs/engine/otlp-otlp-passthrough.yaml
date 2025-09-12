@@ -1,11 +1,12 @@
 settings:
-  default_control_channel_size: 100
+  default_pipeline_ctrl_msg_channel_size: 100
+  default_node_ctrl_msg_channel_size: 100
   default_pdata_channel_size: 100
 
 nodes:
   receiver:
     kind: receiver
-    plugin_urn: "urn::otel::otlp::receiver"
+    plugin_urn: "urn:otel:otlp:receiver"
     out_ports:
       out_port:
         destinations:
@@ -13,7 +14,7 @@ nodes:
         dispatch_strategy: round_robin
     config:
       listening_addr: "0.0.0.0:4317"
-      compression_method: Gzip
+      compression_method: gzip
 
 
   exporter:
@@ -21,4 +22,4 @@ nodes:
     plugin_urn: "urn:otel:otlp:exporter"
     config:
       grpc_endpoint: "http://{{backend_hostname}}:1235"
-      compression_method: Gzip
+      compression_method: gzip

@@ -5,8 +5,11 @@ receivers:
         endpoint: 0.0.0.0:4317
 
 exporters:
-  otlp:
+  otelarrow:
     endpoint: '{{backend_hostname}}:1235'
+    compression: none
+    arrow:
+      payload_compression: zstd
     tls:
       insecure: true
 
@@ -30,4 +33,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [transform]
-      exporters: [otlp]
+      exporters: [otelarrow]

@@ -1,3 +1,4 @@
+# while true; do python ./orchestrator/run_orchestrator.py --config ./test_suites/tech_summit/test-demo-docker.yaml; done
 name: Demo Suite
 components:
   load-generator:
@@ -47,8 +48,8 @@ components:
     execution:
       pipeline_perf_loadgen:
         threads: 1
-        target_rate: 2000
-        batch_size: 1000
+        target_rate: 5000
+        batch_size: 100
         load_type: syslog
     monitoring:
       docker_component: {}
@@ -57,7 +58,7 @@ components:
   rust-engine:
     deployment:
       docker:
-        image: df_engine:latest
+        image: df_engine:latest 
         network: testbed
         ports:
           - "8086:8080"
@@ -128,13 +129,27 @@ tests:
         engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp.yaml
         loadgen_exporter_type: otlp
         backend_receiver_type: otlp
-  - name: OTLP-OTLP (Rust Engine - Passthrough)
-    from_template:
-      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
-      variables:
-        engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
-        loadgen_exporter_type: otlp
-        backend_receiver_type: otlp
+  # # - name: OTLP-OTAP (Go Collector)
+  # #   from_template:
+  # #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
+  # #     variables:
+  # #       collector_config_template: test_suites/tech_summit/templates/configs/otelcol/otlp-otap.yaml
+  # #       loadgen_exporter_type: otlp
+  # #       backend_receiver_type: otap
+  # # - name: OTLP-OTAP (Rust Engine)
+  # #   from_template:
+  # #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+  # #     variables:
+  # #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otap.yaml
+  # #       loadgen_exporter_type: otlp
+  # #       backend_receiver_type: otap
+  # - name: OTLP-OTLP (Rust Engine - Passthrough)
+  #   from_template:
+  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+  #     variables:
+  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
+  #       loadgen_exporter_type: otlp
+  #       backend_receiver_type: otlp
   - name: OTAP-OTAP (Go Collector)
     from_template:
       path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml

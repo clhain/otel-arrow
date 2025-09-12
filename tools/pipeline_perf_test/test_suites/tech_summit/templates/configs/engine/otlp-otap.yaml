@@ -33,7 +33,7 @@ nodes:
 
   exporter:
     kind: exporter
-    plugin_urn: "urn:otel:otlp:exporter"
+    plugin_urn: "urn:otel:otap:exporter"
     config:
       grpc_endpoint: "http://{{backend_hostname}}:1235"
-      compression_method: gzip
+      compression_method: zstd

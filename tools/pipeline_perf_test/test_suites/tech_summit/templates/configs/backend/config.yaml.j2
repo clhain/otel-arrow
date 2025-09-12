@@ -1,5 +1,6 @@
 settings:
-  default_control_channel_size: 100
+  default_pipeline_ctrl_msg_channel_size: 100
+  default_node_ctrl_msg_channel_size: 100
   default_pdata_channel_size: 100
 
 nodes:
@@ -15,9 +16,9 @@ nodes:
     config:
       listening_addr: "0.0.0.0:1235"
       message_size: 100
-      compression_method: Zstd
+      compression_method: zstd
     {% elif backend_receiver_type == "otlp" %}
-    plugin_urn: "urn::otel::otlp::receiver"
+    plugin_urn: "urn:otel:otlp:receiver"
     out_ports:
       out_port:
         destinations:
@@ -25,7 +26,7 @@ nodes:
         dispatch_strategy: round_robin
     config:
       listening_addr: "0.0.0.0:1235"
-      compression_method: Gzip
+      compression_method: gzip
     {% else %}
     # Default or error receiver config
     plugin_urn: "urn:unknown:receiver"

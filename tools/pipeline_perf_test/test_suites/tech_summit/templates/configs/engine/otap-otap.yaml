@@ -1,5 +1,6 @@
 settings:
-  default_control_channel_size: 100
+  default_pipeline_ctrl_msg_channel_size: 100
+  default_node_ctrl_msg_channel_size: 100
   default_pdata_channel_size: 100
 
 nodes:
@@ -14,7 +15,7 @@ nodes:
     config:
       listening_addr: "0.0.0.0:4317"
       message_size: 100
-      compression_method: Zstd
+      compression_method: zstd
 
   attr:
     kind: processor
@@ -27,13 +28,13 @@ nodes:
     config:
       actions:
         - action: "rename"
-          source_key: "name"
-          destination_key: "name2"
-          apply_to: ["scope"]
+          source_key: "ios.app.state"
+          destination_key: "ios.app.state2"
+          apply_to: ["signal"]
 
   exporter:
     kind: exporter
     plugin_urn: "urn:otel:otap:exporter"
     config:
       grpc_endpoint: "http://{{backend_hostname}}:1235"
-      compression_method: Zstd
+      compression_method: zstd

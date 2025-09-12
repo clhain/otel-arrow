@@ -20,8 +20,8 @@ processors:
   transform:
     error_mode: ignore
     trace_statements:
-      - set(scope.attributes["name"], scope.attributes["name2"])
-      - delete_key(scope.attributes, "name")
+      - set(spanevent.attributes["ios.app.state"], spanevent.attributes["ios.app.state2"])
+      - delete_key(spanevent.attributes, "ios.app.state")
 
 service:
   telemetry:
