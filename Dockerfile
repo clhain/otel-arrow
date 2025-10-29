@@ -1,6 +1,5 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
-
 # This Dockerfile builds the OpenTelemetry Protocol with Apache Arrow
 # Collector from the code in this repository.  It builds using the
 # "otelarrowcol" configuration.  See collector/otelarrowcol-build.yaml
