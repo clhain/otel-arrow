@@ -1,0 +1,38 @@
+# This workflow verifies that a manual pipeline-perf run was triggered on the PR.
+# This is a stop-gap until proper failure thresholds are defined and testing is
+# executed automatically.
+name: Pipeline Perf Did Run
+permissions: read-all
+on:
+  pull_request:
+    branches:
+      - main
+  merge_group:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Fetch latest perf-test workflow run via API
+      env:
+        REPO: ${{ github.repository }}
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        WORKFLOW_NAME: "Pipeline Performance Tests - Manual PR"
+        HEAD_SHA: ${{ github.sha }}
+      run: |
+        response=$(curl \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $TOKEN" \
+          "https://api.github.com/repos/$REPO/actions/runs?branch=${{ github.head_ref }}&event=workflow_dispatch&per_page=5")
+        echo "$response" > response.json
+        # parse JSON with jq (assumes jq is available)
+        matched=$(jq -r --arg name "$WORKFLOW_NAME" --arg sha "$HEAD_SHA" \
+          '.workflow_runs[] | select(.name == $name and .head_sha == $sha) | .conclusion' response.json | head -n1)
+        if [ -z "$matched" ]; then
+          echo "No manual perf-test run found for commit $HEAD_SHA"
+          exit 1
+        fi
+        if [ "$matched" != "success" ]; then
+          echo "Latest perf-test run conclusion was $matched"
+          exit 1
+        fi
+        echo "Perf test run passed for commit $HEAD_SHA"
