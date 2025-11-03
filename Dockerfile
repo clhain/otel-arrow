@@ -12,6 +12,7 @@ WORKDIR /otel-arrow
 COPY . .
 ENV CGO_ENABLED=0
 
+
 # Note the version MUST MATCH otelarrowcol-build.yaml
 RUN go install go.opentelemetry.io/collector/cmd/builder@v0.89.0
 
