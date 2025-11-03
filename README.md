@@ -15,6 +15,7 @@ transport in OpenTelemetry pipelines.  This repository is the home of
 the OpenTelemetry Protocol with Apache Arrow protocol, which we refer
 to as "OTAP", and reference implementations in Golang and Rust.
 
+
 The [OpenTelemetry Arrow project has an OpenTelemetry SIG with weekly
 meetings][PROJECTDEF]. Find our [meeting schedule on the OpenTelemetry
 calendar][OTELCAL].
