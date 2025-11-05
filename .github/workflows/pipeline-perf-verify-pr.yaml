@@ -1,7 +1,7 @@
 # This action runs the pipeline perf continuous benchmarking suite if a specific label
 # exits on the PR ("pipelineperf"). It performs the same tests as the continuous benchmarks
 # but doesn't update the charts since it's intended to run prior to merge.
-name: Pipeline Perf - OnLabel
+name: Pipeline Perf Pre-Merge
 
 on:
   pull_request:
@@ -18,9 +18,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  label-check:
+    name: Preflight Check for Label
+    runs-on: ubuntu-latest
+    outputs:
+      has_label: ${{ steps.check_label.outputs.has_label }}
+    steps:
+      - name: Check if PR has 'pipelineperf' label
+        id: check_label
+        run: |
+          echo "Checking for 'pipelineperf' label..."
+          labels=$(echo '${{ toJson(github.event.pull_request.labels) }}' | jq -r '.[].name')
+          echo "Found labels: $labels"
+          if echo "$labels" | grep -q "pipelineperf"; then
+            echo "Label found ✅"
+            echo "has_label=true" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Missing 'pipelineperf' label — skipping heavy job."
+            echo "has_label=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
   pipeline-perf-test:
-    # Only run when PR has 'cargobench' label
-    if: contains(github.event.pull_request.labels.*.name, 'pipelineperf')
+    needs: preflight-check
+    if: needs.preflight-check.outputs.has_label == 'true'
     runs-on: oracle-bare-metal-64cpu-512gb-x86-64
     steps:
       - name: Harden the runner (Audit all outbound calls)
