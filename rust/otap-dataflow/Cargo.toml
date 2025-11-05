@@ -39,6 +39,9 @@ clap.workspace = true
 mimalloc-rust.workspace = true
 
 [workspace.dependencies]
+otap-df-pdata-otlp-macros = { path = "./crates/pdata/src/otlp/macros"}
+otap-df-pdata-otlp-model = { path = "./crates/pdata/src/otlp/model"}
+otel-arrow-rust = { path = "../otel-arrow-rust"}
 
 arrayvec = "0.7.6"
 arrow = "56.1"
@@ -70,7 +73,7 @@ miette = { version="7.6.0", features = ["fancy"] }
 mimalloc-rust = "0.2.1"
 object_store = "0.12.3"
 once_cell = "1.20.2"
-otel-arrow-rust = { path = "../otel-arrow-rust"}
+opentelemetry-proto = { version = "0.31", default-features = false} #TODO - use it from submodule instead of crate(?)
 parking_lot = "0.12.4"
 parquet = { version = "56.1", default-features = false, features = ["arrow", "async", "object_store"]}
 portpicker = "0.1.1"
@@ -126,6 +129,9 @@ default = []
 unsafe-optimizations = ["unchecked-index", "unchecked-arithmetic"]
 unchecked-index = []
 unchecked-arithmetic = []
+# Experimental exporters (opt-in)
+experimental-exporters = ["otap-df-otap/experimental-exporters"]
+geneva-exporter = ["otap-df-otap/geneva-exporter"]
 
 [workspace.lints.rust]
 # General compatibility lints

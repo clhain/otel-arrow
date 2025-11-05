@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use arrow::array::Array;
-use snafu::OptionExt;
 
 use crate::arrays::{MaybeDictArrayAccessor, NullableArrayAccessor};
-use crate::error::{self, Error, Result};
+use crate::error::{Error, Result};
 use crate::otap::OtapArrowRecords;
 use crate::otlp::attributes::{Attribute16Arrays, Attribute32Arrays, encode_key_value};
 use crate::otlp::common::{
@@ -54,7 +53,7 @@ impl<'a> TryFrom<&'a OtapArrowRecords> for TracesDataArrays<'a> {
     fn try_from(otap_batch: &'a OtapArrowRecords) -> Result<Self> {
         let spans_rb = otap_batch
             .get(ArrowPayloadType::Spans)
-            .context(error::SpanRecordNotFoundSnafu)?;
+            .ok_or(Error::SpanRecordNotFound)?;
 
         Ok(Self {
             span_arrays: SpansArrays::try_from(spans_rb)?,
@@ -127,7 +126,7 @@ impl ProtoBytesEncoder for TracesProtoBytesEncoder {
         // get the list of indices from the root record batch to visit in order
         let spans_rb = otap_batch
             .get(ArrowPayloadType::Spans)
-            .context(error::SpanRecordNotFoundSnafu)?;
+            .ok_or(Error::SpanRecordNotFound)?;
         self.batch_sorter
             .init_cursor_for_root_batch(spans_rb, &mut self.root_cursor)?;
 
@@ -739,91 +738,86 @@ mod test {
         let result = TracesData::decode(result_buf.as_ref()).unwrap();
 
         let expected = TracesData::new(vec![
-            ResourceSpans::build(Resource {
-                attributes: vec![KeyValue::new("ake2", AnyValue::new_string("aval"))],
-                ..Default::default()
-            })
-            .scope_spans(vec![
-                ScopeSpans::build(InstrumentationScope {
-                    version: "scopev0".to_string(),
-                    attributes: vec![KeyValue::new("ake2", AnyValue::new_string("aval"))],
-                    ..Default::default()
-                })
-                .spans(vec![Span {
-                    trace_id: 4u128.to_le_bytes().to_vec(),
-                    start_time_unix_nano: 1,
-                    end_time_unix_nano: 2,
-                    status: Some(Status {
-                        message: "statusa".to_string(),
-                        code: StatusCode::Ok as i32,
-                    }),
-                    attributes: vec![KeyValue::new("ake2", AnyValue::new_string("aval"))],
-                    ..Default::default()
-                }])
-                .finish(),
-            ])
-            .finish(),
-            ResourceSpans::build(Resource {
-                attributes: vec![KeyValue::new("bke2", AnyValue::new_string("bval"))],
-                ..Default::default()
-            })
-            .scope_spans(vec![
-                ScopeSpans::build(InstrumentationScope {
-                    version: "scopev1".to_string(),
-                    attributes: vec![KeyValue::new("bke2", AnyValue::new_string("bval"))],
-                    ..Default::default()
-                })
-                .spans(vec![Span {
-                    trace_id: 1u128.to_le_bytes().to_vec(),
-                    start_time_unix_nano: 5,
-                    end_time_unix_nano: 7,
-                    attributes: vec![KeyValue::new("bke2", AnyValue::new_string("bval"))],
-                    status: Some(Status {
-                        message: "statusb".to_string(),
-                        code: StatusCode::Error as i32,
-                    }),
-                    events: vec![
-                        Event {
-                            time_unix_nano: 1,
-                            name: "sea".to_string(),
-                            dropped_attributes_count: 0,
-                            attributes: vec![
-                                KeyValue::new("ake1", AnyValue::new_string("aval")),
-                                KeyValue::new("bke1", AnyValue::new_string("bval")),
-                            ],
-                        },
-                        Event {
-                            time_unix_nano: 2,
-                            name: "seb".to_string(),
-                            dropped_attributes_count: 2,
-                            ..Default::default()
-                        },
+            ResourceSpans::new(
+                Resource::build()
+                    .attributes(vec![KeyValue::new("ake2", AnyValue::new_string("aval"))])
+                    .finish(),
+                vec![ScopeSpans::new(
+                    InstrumentationScope::build()
+                        .version("scopev0")
+                        .attributes(vec![KeyValue::new("ake2", AnyValue::new_string("aval"))])
+                        .finish(),
+                    vec![
+                        Span::build()
+                            .trace_id(4u128.to_le_bytes().to_vec())
+                            .start_time_unix_nano(1u64)
+                            .end_time_unix_nano(2u64)
+                            .status(Status::new(StatusCode::Ok, "statusa"))
+                            .attributes(vec![KeyValue::new("ake2", AnyValue::new_string("aval"))])
+                            .finish(),
                     ],
-                    ..Default::default()
-                }])
-                .finish(),
-                ScopeSpans::build(InstrumentationScope {
-                    version: "scopev2".to_string(),
-                    ..Default::default()
-                })
-                .spans(vec![Span {
-                    trace_id: 8u128.to_le_bytes().to_vec(),
-                    start_time_unix_nano: 8,
-                    end_time_unix_nano: 9,
-                    links: vec![Link {
-                        trace_id: 16u128.to_le_bytes().to_vec(),
-                        span_id: 32u64.to_le_bytes().to_vec(),
-                        attributes: vec![
-                            KeyValue::new("ake1", AnyValue::new_string("aval")),
-                            KeyValue::new("bke1", AnyValue::new_string("bval")),
+                )],
+            ),
+            ResourceSpans::new(
+                Resource::build()
+                    .attributes(vec![KeyValue::new("bke2", AnyValue::new_string("bval"))])
+                    .finish(),
+                vec![
+                    ScopeSpans::new(
+                        InstrumentationScope::build()
+                            .version("scopev1")
+                            .attributes(vec![KeyValue::new("bke2", AnyValue::new_string("bval"))])
+                            .finish(),
+                        vec![
+                            Span::build()
+                                .trace_id(1u128.to_le_bytes().to_vec())
+                                .start_time_unix_nano(5u64)
+                                .end_time_unix_nano(7u64)
+                                .attributes(vec![KeyValue::new(
+                                    "bke2",
+                                    AnyValue::new_string("bval"),
+                                )])
+                                .status(Status::new(StatusCode::Error, "statusb"))
+                                .events(vec![
+                                    Event {
+                                        time_unix_nano: 1,
+                                        name: "sea".to_string(),
+                                        dropped_attributes_count: 0,
+                                        attributes: vec![
+                                            KeyValue::new("ake1", AnyValue::new_string("aval")),
+                                            KeyValue::new("bke1", AnyValue::new_string("bval")),
+                                        ],
+                                    },
+                                    Event {
+                                        time_unix_nano: 2,
+                                        name: "seb".to_string(),
+                                        dropped_attributes_count: 2,
+                                        ..Default::default()
+                                    },
+                                ])
+                                .finish(),
                         ],
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                }])
-                .finish(),
-            ])
-            .finish(),
+                    ),
+                    ScopeSpans::new(
+                        InstrumentationScope::build().version("scopev2").finish(),
+                        vec![Span {
+                            trace_id: 8u128.to_le_bytes().to_vec(),
+                            start_time_unix_nano: 8,
+                            end_time_unix_nano: 9,
+                            links: vec![Link {
+                                trace_id: 16u128.to_le_bytes().to_vec(),
+                                span_id: 32u64.to_le_bytes().to_vec(),
+                                attributes: vec![
+                                    KeyValue::new("ake1", AnyValue::new_string("aval")),
+                                    KeyValue::new("bke1", AnyValue::new_string("bval")),
+                                ],
+                                ..Default::default()
+                            }],
+                            ..Default::default()
+                        }],
+                    ),
+                ],
+            ),
         ]);
 
         assert_eq!(result, expected);

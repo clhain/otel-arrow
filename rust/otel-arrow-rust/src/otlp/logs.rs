@@ -5,13 +5,12 @@ use arrow::array::{
     Array, RecordBatch, StructArray, TimestampNanosecondArray, UInt16Array, UInt32Array,
 };
 use arrow::datatypes::{DataType, Fields};
-use snafu::OptionExt;
 
 use crate::arrays::{
     ByteArrayAccessor, Int32ArrayAccessor, NullableArrayAccessor, StringArrayAccessor,
     StructColumnAccessor, get_timestamp_nanosecond_array_opt, get_u16_array, get_u32_array_opt,
 };
-use crate::error::{self, Error, Result};
+use crate::error::{Error, Result};
 use crate::otap::OtapArrowRecords;
 use crate::otlp::ProtoBytesEncoder;
 use crate::otlp::attributes::{Attribute16Arrays, encode_any_value, encode_key_value};
@@ -88,13 +87,13 @@ impl<'a> TryFrom<&'a RecordBatch> for LogsArrays<'a> {
         let body = rb
             .column_by_name(consts::BODY)
             .map(|arr| {
-                let logs_body = arr.as_any().downcast_ref::<StructArray>().context(
-                    error::ColumnDataTypeMismatchSnafu {
-                        name: consts::BODY,
+                let logs_body = arr.as_any().downcast_ref::<StructArray>().ok_or_else(|| {
+                    Error::ColumnDataTypeMismatch {
+                        name: consts::BODY.into(),
                         actual: arr.data_type().clone(),
                         expect: DataType::Struct(Fields::default()),
-                    },
-                )?;
+                    }
+                })?;
 
                 LogBodyArrays::try_from(logs_body)
             })
@@ -164,7 +163,7 @@ impl<'a> TryFrom<&'a OtapArrowRecords> for LogsDataArrays<'a> {
     fn try_from(otap_batch: &'a OtapArrowRecords) -> Result<Self> {
         let logs_rb = otap_batch
             .get(ArrowPayloadType::Logs)
-            .context(error::LogRecordNotFoundSnafu)?;
+            .ok_or(Error::LogRecordNotFound)?;
 
         Ok(Self {
             log_arrays: LogsArrays::try_from(logs_rb)?,
@@ -215,7 +214,7 @@ impl ProtoBytesEncoder for LogsProtoBytesEncoder {
         // get the list of indices in the root record to visit in order
         let logs_rb = otap_batch
             .get(ArrowPayloadType::Logs)
-            .context(error::LogRecordNotFoundSnafu)?;
+            .ok_or(Error::LogRecordNotFound)?;
         self.batch_sorter
             .init_cursor_for_root_batch(logs_rb, &mut self.root_cursor)?;
 
@@ -626,56 +625,51 @@ mod test {
         ];
 
         let expected = LogsData::new(vec![
-            ResourceLogs::build(Resource {
-                attributes: id_0_attrs.clone(),
-                ..Default::default()
-            })
-            .scope_logs(vec![
-                ScopeLogs::build(InstrumentationScope {
-                    name: "scope0".to_string(),
-                    attributes: id_0_attrs.clone(),
-                    ..Default::default()
-                })
-                .log_records(vec![LogRecord {
-                    time_unix_nano: 1,
-                    severity_text: "ERROR".to_string(),
-                    body: Some(AnyValue::new_string("a")),
-                    attributes: id_0_attrs.clone(),
-                    ..Default::default()
-                }])
-                .finish(),
-            ])
-            .finish(),
-            ResourceLogs::build(Resource {
-                attributes: id_1_attrs.clone(),
-                ..Default::default()
-            })
-            .scope_logs(vec![
-                ScopeLogs::build(InstrumentationScope {
-                    name: "scope1".to_string(),
-                    attributes: id_1_attrs.clone(),
-                    ..Default::default()
-                })
-                .log_records(vec![LogRecord {
-                    time_unix_nano: 2,
-                    severity_text: "INFO".to_string(),
-                    body: Some(AnyValue::new_string("b")),
-                    attributes: id_1_attrs,
-                    ..Default::default()
-                }])
-                .finish(),
-                ScopeLogs::build(InstrumentationScope {
-                    name: "scope2".to_string(),
-                    ..Default::default()
-                })
-                .log_records(vec![LogRecord {
-                    time_unix_nano: 3,
-                    severity_text: "DEBUG".to_string(),
-                    ..Default::default()
-                }])
-                .finish(),
-            ])
-            .finish(),
+            ResourceLogs::new(
+                Resource::build().attributes(id_0_attrs.clone()).finish(),
+                vec![ScopeLogs::new(
+                    InstrumentationScope::build()
+                        .name("scope0")
+                        .attributes(id_0_attrs.clone())
+                        .finish(),
+                    vec![
+                        LogRecord::build()
+                            .time_unix_nano(1u64)
+                            .severity_text("ERROR")
+                            .body(AnyValue::new_string("a"))
+                            .attributes(id_0_attrs.clone())
+                            .finish(),
+                    ],
+                )],
+            ),
+            ResourceLogs::new(
+                Resource::build().attributes(id_1_attrs.clone()).finish(),
+                vec![
+                    ScopeLogs::new(
+                        InstrumentationScope::build()
+                            .name("scope1")
+                            .attributes(id_1_attrs.clone())
+                            .finish(),
+                        vec![
+                            LogRecord::build()
+                                .time_unix_nano(2u64)
+                                .severity_text("INFO")
+                                .body(AnyValue::new_string("b"))
+                                .attributes(id_1_attrs)
+                                .finish(),
+                        ],
+                    ),
+                    ScopeLogs::new(
+                        InstrumentationScope::build().name("scope2").finish(),
+                        vec![
+                            LogRecord::build()
+                                .time_unix_nano(3u64)
+                                .severity_text("DEBUG")
+                                .finish(),
+                        ],
+                    ),
+                ],
+            ),
         ]);
 
         assert_eq!(result, expected);

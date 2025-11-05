@@ -136,21 +136,15 @@ impl OTLPReceiver {
     fn route_ack_response(&self, states: &SharedStates, ack: AckMsg<OtapPdata>) -> RouteResponse {
         let calldata = ack.calldata;
         let resp = Ok(());
-        match ack.accepted.signal_type() {
-            SignalType::Logs => states
-                .logs
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-            SignalType::Metrics => states
-                .metrics
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-            SignalType::Traces => states
-                .traces
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-        }
-        .unwrap_or(RouteResponse::None)
+        let state = match ack.accepted.signal_type() {
+            SignalType::Logs => states.logs.as_ref(),
+            SignalType::Metrics => states.metrics.as_ref(),
+            SignalType::Traces => states.traces.as_ref(),
+        };
+
+        state
+            .map(|s| s.route_response(calldata, resp))
+            .unwrap_or(RouteResponse::None)
     }
 
     fn route_nack_response(
@@ -159,30 +153,33 @@ impl OTLPReceiver {
         mut nack: NackMsg<OtapPdata>,
     ) -> RouteResponse {
         let calldata = std::mem::take(&mut nack.calldata);
-        let sigtype = nack.refused.signal_type();
+        let signal_type = nack.refused.signal_type();
         let resp = Err(nack);
-        match sigtype {
-            SignalType::Logs => states
-                .logs
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-            SignalType::Metrics => states
-                .metrics
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-            SignalType::Traces => states
-                .traces
-                .as_ref()
-                .map(|state| state.route_response(calldata, resp)),
-        }
-        .unwrap_or(RouteResponse::None)
+        let state = match signal_type {
+            SignalType::Logs => states.logs.as_ref(),
+            SignalType::Metrics => states.metrics.as_ref(),
+            SignalType::Traces => states.traces.as_ref(),
+        };
+
+        state
+            .map(|s| s.route_response(calldata, resp))
+            .unwrap_or(RouteResponse::None)
     }
 
-    fn handle_acknack_response(&mut self, resp: RouteResponse) {
+    fn handle_ack_response(&mut self, resp: RouteResponse) {
         match resp {
             RouteResponse::Sent => self.metrics.acks_sent.inc(),
-            RouteResponse::Expired => self.metrics.nacks_sent.inc(),
-            RouteResponse::Invalid => self.metrics.acks_nacks_expired.inc(),
+            RouteResponse::Expired => self.metrics.acks_nacks_invalid_or_expired.inc(),
+            RouteResponse::Invalid => self.metrics.acks_nacks_invalid_or_expired.inc(),
+            RouteResponse::None => {}
+        }
+    }
+
+    fn handle_nack_response(&mut self, resp: RouteResponse) {
+        match resp {
+            RouteResponse::Sent => self.metrics.nacks_sent.inc(),
+            RouteResponse::Expired => self.metrics.acks_nacks_invalid_or_expired.inc(),
+            RouteResponse::Invalid => self.metrics.acks_nacks_invalid_or_expired.inc(),
             RouteResponse::None => {}
         }
     }
@@ -212,7 +209,7 @@ pub struct OtlpReceiverMetrics {
 
     /// Number of invalid/expired acks/nacks.
     #[metric(unit = "{ack_or_nack}")]
-    pub acks_nacks_expired: Counter<u64>,
+    pub acks_nacks_invalid_or_expired: Counter<u64>,
 }
 
 #[async_trait]
@@ -284,10 +281,10 @@ impl shared::Receiver<OtapPdata> for OTLPReceiver {
                             _ = metrics_reporter.report(&mut self.metrics);
                         },
                         Ok(NodeControlMsg::Ack(ack)) => {
-                            self.handle_acknack_response(self.route_ack_response(&states, ack));
+                            self.handle_ack_response(self.route_ack_response(&states, ack));
                         },
                         Ok(NodeControlMsg::Nack(nack)) => {
-                            self.handle_acknack_response(self.route_nack_response(&states, nack));
+                            self.handle_nack_response(self.route_nack_response(&states, nack));
                         },
                         Err(e) => {
                             return Err(Error::ChannelRecvError(e));
@@ -327,23 +324,6 @@ mod tests {
     use super::*;
 
     use crate::pdata::OtlpProtoBytes;
-    use crate::proto::opentelemetry::collector::logs::v1::logs_service_client::LogsServiceClient;
-    use crate::proto::opentelemetry::collector::logs::v1::{
-        ExportLogsServiceRequest, ExportLogsServiceResponse,
-    };
-    use crate::proto::opentelemetry::collector::metrics::v1::metrics_service_client::MetricsServiceClient;
-    use crate::proto::opentelemetry::collector::metrics::v1::{
-        ExportMetricsServiceRequest, ExportMetricsServiceResponse,
-    };
-    use crate::proto::opentelemetry::collector::trace::v1::trace_service_client::TraceServiceClient;
-    use crate::proto::opentelemetry::collector::trace::v1::{
-        ExportTraceServiceRequest, ExportTraceServiceResponse,
-    };
-    use crate::proto::opentelemetry::common::v1::{InstrumentationScope, KeyValue};
-    use crate::proto::opentelemetry::logs::v1::{LogRecord, ResourceLogs, ScopeLogs};
-    use crate::proto::opentelemetry::metrics::v1::{ResourceMetrics, ScopeMetrics};
-    use crate::proto::opentelemetry::resource::v1::Resource;
-    use crate::proto::opentelemetry::trace::v1::{ResourceSpans, ScopeSpans};
     use otap_df_config::node::NodeUserConfig;
     use otap_df_engine::context::ControllerContext;
     use otap_df_engine::control::NackMsg;
@@ -353,6 +333,23 @@ mod tests {
         receiver::{NotSendValidateContext, TestContext, TestRuntime},
         test_node,
     };
+    use otap_df_pdata::proto::opentelemetry::collector::logs::v1::logs_service_client::LogsServiceClient;
+    use otap_df_pdata::proto::opentelemetry::collector::logs::v1::{
+        ExportLogsServiceRequest, ExportLogsServiceResponse,
+    };
+    use otap_df_pdata::proto::opentelemetry::collector::metrics::v1::metrics_service_client::MetricsServiceClient;
+    use otap_df_pdata::proto::opentelemetry::collector::metrics::v1::{
+        ExportMetricsServiceRequest, ExportMetricsServiceResponse,
+    };
+    use otap_df_pdata::proto::opentelemetry::collector::trace::v1::trace_service_client::TraceServiceClient;
+    use otap_df_pdata::proto::opentelemetry::collector::trace::v1::{
+        ExportTraceServiceRequest, ExportTraceServiceResponse,
+    };
+    use otap_df_pdata::proto::opentelemetry::common::v1::{InstrumentationScope, KeyValue};
+    use otap_df_pdata::proto::opentelemetry::logs::v1::{LogRecord, ResourceLogs, ScopeLogs};
+    use otap_df_pdata::proto::opentelemetry::metrics::v1::{ResourceMetrics, ScopeMetrics};
+    use otap_df_pdata::proto::opentelemetry::resource::v1::Resource;
+    use otap_df_pdata::proto::opentelemetry::trace::v1::{ResourceSpans, ScopeSpans};
     use otap_df_telemetry::registry::MetricsRegistryHandle;
     use prost::Message;
     use std::pin::Pin;

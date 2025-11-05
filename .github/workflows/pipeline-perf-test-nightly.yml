@@ -37,6 +37,9 @@ jobs:
           run: |
             set -euxo pipefail
 
+            # Run disk cleanup script
+            bash ./.github/workflows/scripts/disk-cleanup.sh
+
             # Enable repos (no-op if already enabled)
             sudo dnf -y install oracle-epel-release-el8 || true
             sudo dnf -y config-manager --set-enabled ol8_codeready_builder || true

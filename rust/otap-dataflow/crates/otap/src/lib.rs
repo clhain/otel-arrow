@@ -32,9 +32,6 @@ pub mod retry_processor;
 /// Receiver that reads in syslog data
 pub mod syslog_cef_receiver;
 
-/// Generated protobuf files
-pub mod proto;
-
 /// Common component accessories (e.g., context-state management).
 pub mod accessory;
 
@@ -56,6 +53,10 @@ pub mod noop_exporter;
 
 /// An error-exporter returns a static error.
 pub mod error_exporter;
+
+/// Experimental exporters
+#[cfg(feature = "experimental-exporters")]
+pub mod experimental;
 
 /// testing utilities
 #[cfg(test)]
