@@ -16,6 +16,7 @@ on:
         type: string
         default: tools/pipeline_perf_test/test_suites/integration/continuous/100klrps-docker.yaml
 
+
 # Cancel in-progress runs for the same PR if a new manual run is started
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.pr_number }}
