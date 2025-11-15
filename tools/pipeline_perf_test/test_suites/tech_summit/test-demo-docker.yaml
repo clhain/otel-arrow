@@ -143,13 +143,13 @@ tests:
   # #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otap.yaml
   # #       loadgen_exporter_type: otlp
   # #       backend_receiver_type: otap
-  # - name: OTLP-OTLP (Rust Engine - Passthrough)
-  #   from_template:
-  #     path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
-  #     variables:
-  #       engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
-  #       loadgen_exporter_type: otlp
-  #       backend_receiver_type: otlp
+  - name: OTLP-OTLP (Rust Engine - Passthrough)
+    from_template:
+      path: test_suites/tech_summit/templates/test_steps/test-steps-docker-df.yaml
+      variables:
+        engine_config_template: test_suites/tech_summit/templates/configs/engine/otlp-otlp-passthrough.yaml
+        loadgen_exporter_type: otlp
+        backend_receiver_type: otlp
   - name: OTAP-OTAP (Go Collector)
     from_template:
       path: test_suites/tech_summit/templates/test_steps/test-steps-docker-otel.yaml
