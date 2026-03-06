@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772676328489,
+  "lastUpdate": 1772762807571,
   "repoUrl": "https://github.com/clhain/otel-arrow",
   "entries": {
     "Benchmark": [
@@ -1599,6 +1599,38 @@ window.BENCHMARK_DATA = {
           {
             "name": "linux-arm64-binary-size",
             "value": 67.99,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Cijo Thomas",
+            "username": "cijothomas",
+            "email": "cijo.thomas@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "4e7f6a95ab06ee873b78bdba726d5f7b1d5ff7f5",
+          "message": "Update benchmarks doc to list all current tests (#1781)\n\nFixed one TODO!\n\nhttps://github.com/open-telemetry/otel-arrow/pull/1528 - Still working\non this separately, which will include actual numbers for key scenarios,\nso readers don't have to go through the graphs themselves!",
+          "timestamp": "2026-01-14T19:50:43Z",
+          "url": "https://github.com/clhain/otel-arrow/commit/4e7f6a95ab06ee873b78bdba726d5f7b1d5ff7f5"
+        },
+        "date": 1772762805671,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "linux-amd64-binary-size",
+            "value": 79.7,
+            "unit": "MB"
+          },
+          {
+            "name": "linux-arm64-binary-size",
+            "value": 68.11,
             "unit": "MB"
           }
         ]
