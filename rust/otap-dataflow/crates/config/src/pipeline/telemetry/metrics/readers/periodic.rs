@@ -11,12 +11,20 @@ use serde::{Deserialize, Serialize};
 use crate::pipeline::telemetry::metrics::readers::periodic::otlp::OtlpExporterConfig;
 
 /// OpenTelemetry Metrics Periodic Exporter configuration.
+/// 
+/// Variants:
+/// - `console`: Writes metrics to the console.
+/// - `otlp`: Sends metrics using the OpenTelemetry Protocol.
+/// 
+/// Note: Variant doc comments are intentionally omitted because they produce
+/// inconsistent `description` metadata across the JSON Schema `oneOf`
+/// subschemas, which is rejected by strict schema validators that require
+/// identical property definitions across subschema variants
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(tag = "type", content = "config", rename_all = "lowercase")]
+#[allow(missing_docs)]
 pub enum MetricsPeriodicExporterConfig {
-    /// Console exporter that writes metrics to the console.
     Console,
-    /// OTLP exporter that sends metrics using the OpenTelemetry Protocol.
     Otlp(OtlpExporterConfig),
 }
 
