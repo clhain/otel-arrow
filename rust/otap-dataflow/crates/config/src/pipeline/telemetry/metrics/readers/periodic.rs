@@ -12,6 +12,11 @@ use crate::pipeline::telemetry::metrics::readers::periodic::otlp::OtlpExporterCo
 
 /// OpenTelemetry Metrics Periodic Exporter configuration.
 #[derive(Debug, Clone, Serialize, JsonSchema, PartialEq)]
+/// The enum below produces `oneOf` subschemas with differing `enum_values`
+/// for the discriminator field, which is valid JSON Schema but rejected by some strict schema
+/// mergers. The `x-kubernetes-preserve-unknown-fields` extension tells
+/// validatork8s to skip structural validation for this type.
+#[schemars(extend("x-kubernetes-preserve-unknown-fields" = true))]
 pub enum MetricsPeriodicExporterConfig {
     /// Console exporter that writes metrics to the console.
     Console,
