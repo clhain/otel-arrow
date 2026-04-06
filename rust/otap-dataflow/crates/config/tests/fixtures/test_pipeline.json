@@ -7,7 +7,7 @@
           {
             "periodic": {
               "exporter": {
-                "console": {}
+                "type": "console"
               }
             }
           }

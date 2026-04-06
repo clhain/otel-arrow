@@ -41,7 +41,7 @@ mod tests {
             readers:
               - periodic:
                   exporter:
-                    console:
+                    type: console
                   interval: "10s"
             "#;
 

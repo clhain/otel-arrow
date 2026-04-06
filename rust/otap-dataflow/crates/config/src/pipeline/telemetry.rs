@@ -281,7 +281,7 @@ mod tests {
                 readers:
                     - periodic:
                         exporter:
-                            console:
+                            type: console
             "#;
         let config: TelemetryConfig = serde_yaml::from_str(yaml_str).unwrap();
 

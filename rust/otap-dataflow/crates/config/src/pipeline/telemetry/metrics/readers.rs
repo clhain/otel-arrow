@@ -102,7 +102,7 @@ mod tests {
         let yaml_str = r#"
             periodic:
                 exporter:
-                    console:
+                    type: console
                 interval: "10s"
             "#;
         let config: MetricsReaderConfig = serde_yaml::from_str(yaml_str).unwrap();

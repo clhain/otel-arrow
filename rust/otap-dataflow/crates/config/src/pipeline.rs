@@ -1600,7 +1600,7 @@ mod tests {
                 - periodic:
                     interval: "15s"
                     exporter:
-                      console: {}
+                      type: console
             "#;
         let config: TelemetryConfig = serde_yaml::from_str(yaml_data).unwrap();
         assert_eq!(config.reporting_channel_size, 200);
@@ -1638,7 +1638,7 @@ mod tests {
               - periodic:
                   interval: "10s"
                   exporter:
-                    console:
+                    type: console
             "#;
         let config: MetricsConfig = serde_yaml::from_str(yaml_data).unwrap();
         assert_eq!(config.readers.len(), 1);
@@ -1657,7 +1657,7 @@ mod tests {
         let yaml_data = r#"
             interval: "20s"
             exporter:
-              console:
+              type: console
             "#;
         let metrics_reader_periodic_config: MetricsReaderPeriodicConfig =
             serde_yaml::from_str(yaml_data).unwrap();
@@ -1672,7 +1672,7 @@ mod tests {
         let yaml_data = r#"
             interval: "20s"
             exporter:
-              unknown: {}
+              type: unknown
             "#;
         let metrics_reader_periodic_config_result: Result<
             MetricsReaderPeriodicConfig,
@@ -1680,7 +1680,7 @@ mod tests {
         > = serde_yaml::from_str(yaml_data);
         if let Err(e) = metrics_reader_periodic_config_result {
             let err_msg = e.to_string();
-            assert!(err_msg.contains("unknown field `unknown`"));
+            assert!(err_msg.contains("unknown variant `unknown`"));
         } else {
             panic!("Expected deserialization to fail due to unknown exporter");
         }
