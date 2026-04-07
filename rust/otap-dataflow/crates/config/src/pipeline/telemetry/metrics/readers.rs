@@ -108,7 +108,10 @@ mod tests {
         let config: MetricsReaderConfig = serde_yaml::from_str(yaml_str).unwrap();
 
         if let MetricsReaderConfig::Periodic(periodic_config) = config {
-            if MetricsPeriodicExporterConfig::Console != periodic_config.exporter {
+            if !matches!(
+                periodic_config.exporter,
+                MetricsPeriodicExporterConfig::Console {}
+            ) {
                 panic!("Expected console exporter");
             }
             assert_eq!(periodic_config.interval.as_secs(), 10);

@@ -81,7 +81,7 @@ impl MeterProvider {
             MetricsReaderConfig::Periodic(periodic_config) => {
                 let interval = &periodic_config.interval;
                 match &periodic_config.exporter {
-                    MetricsPeriodicExporterConfig::Console => {
+                    MetricsPeriodicExporterConfig::Console {} => {
                         sdk_meter_builder =
                             Self::configure_console_metric_exporter(sdk_meter_builder, interval)?;
                     }
@@ -138,7 +138,7 @@ mod tests {
         let metric_readers = vec![
             MetricsReaderConfig::Periodic(MetricsReaderPeriodicConfig {
                 interval: std::time::Duration::from_secs(10),
-                exporter: MetricsPeriodicExporterConfig::Console,
+                exporter: MetricsPeriodicExporterConfig::Console {},
             }),
             MetricsReaderConfig::Periodic(MetricsReaderPeriodicConfig {
                 interval: std::time::Duration::from_secs(15),
@@ -177,7 +177,7 @@ mod tests {
         let metric_readers = vec![
             MetricsReaderConfig::Periodic(MetricsReaderPeriodicConfig {
                 interval: std::time::Duration::from_secs(10),
-                exporter: MetricsPeriodicExporterConfig::Console,
+                exporter: MetricsPeriodicExporterConfig::Console {},
             }),
             MetricsReaderConfig::Periodic(MetricsReaderPeriodicConfig {
                 interval: std::time::Duration::from_secs(15),

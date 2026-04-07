@@ -14,7 +14,8 @@ use crate::pipeline::telemetry::metrics::readers::periodic::otlp::OtlpExporterCo
 #[derive(Debug, Clone, Serialize, JsonSchema, PartialEq)]
 pub enum MetricsPeriodicExporterConfig {
     /// Console exporter that writes metrics to the console.
-    Console,
+    // The empty variant is used for compatibility with Schemars complex enum support in CRDs.
+    Console {},
     /// OTLP exporter that sends metrics using the OpenTelemetry Protocol.
     Otlp(OtlpExporterConfig),
 }
@@ -44,7 +45,7 @@ impl<'de> Deserialize<'de> for MetricsPeriodicExporterConfig {
                     match key.as_str() {
                         "console" => {
                             let _: IgnoredAny = map.next_value()?; // consume the value. Console does not have any attributes.
-                            Ok(MetricsPeriodicExporterConfig::Console)
+                            Ok(MetricsPeriodicExporterConfig::Console {})
                         }
                         "otlp" => {
                             let otlp_config: OtlpExporterConfig = map.next_value()?;
@@ -78,7 +79,7 @@ mod tests {
 
         let config: MetricsPeriodicExporterConfig = serde_yaml::from_str(yaml_str).unwrap();
 
-        assert_eq!(config, MetricsPeriodicExporterConfig::Console);
+        assert_eq!(config, MetricsPeriodicExporterConfig::Console {});
     }
 
     #[test]

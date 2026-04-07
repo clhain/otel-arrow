@@ -33,6 +33,8 @@ impl MetricsConfig {
 
 #[cfg(test)]
 mod tests {
+    use crate::pipeline::telemetry::metrics::readers::periodic::MetricsPeriodicExporterConfig;
+
     use super::*;
 
     #[test]
@@ -50,8 +52,10 @@ mod tests {
         assert_eq!(config.readers.len(), 1);
 
         if let readers::MetricsReaderConfig::Periodic(periodic_config) = &config.readers[0] {
-            if readers::periodic::MetricsPeriodicExporterConfig::Console != periodic_config.exporter
-            {
+            if !matches!(
+                periodic_config.exporter,
+                MetricsPeriodicExporterConfig::Console {}
+            ) {
                 panic!("Expected console exporter");
             }
             assert_eq!(periodic_config.interval.as_secs(), 10);

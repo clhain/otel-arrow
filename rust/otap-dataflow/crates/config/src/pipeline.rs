@@ -1631,7 +1631,10 @@ mod tests {
         assert_eq!(readers.len(), 1);
         if let MetricsReaderConfig::Periodic(periodic_config) = &readers[0] {
             assert_eq!(periodic_config.interval.as_secs(), 15);
-            if MetricsPeriodicExporterConfig::Console != periodic_config.exporter {
+            if !matches!(
+                periodic_config.exporter,
+                MetricsPeriodicExporterConfig::Console {}
+            ) {
                 panic!("Expected Console exporter config");
             }
         } else {
@@ -1652,7 +1655,10 @@ mod tests {
         assert_eq!(config.readers.len(), 1);
         if let MetricsReaderConfig::Periodic(periodic_config) = &config.readers[0] {
             assert_eq!(periodic_config.interval.as_secs(), 10);
-            if MetricsPeriodicExporterConfig::Console != periodic_config.exporter {
+            if !matches!(
+                periodic_config.exporter,
+                MetricsPeriodicExporterConfig::Console {}
+            ) {
                 panic!("Expected Console exporter config");
             }
         } else {
@@ -1670,7 +1676,10 @@ mod tests {
         let metrics_reader_periodic_config: MetricsReaderPeriodicConfig =
             serde_yaml::from_str(yaml_data).unwrap();
         assert_eq!(metrics_reader_periodic_config.interval.as_secs(), 20);
-        if MetricsPeriodicExporterConfig::Console != metrics_reader_periodic_config.exporter {
+        if !matches!(
+            metrics_reader_periodic_config.exporter,
+            MetricsPeriodicExporterConfig::Console {}
+        ) {
             panic!("Expected Console exporter config");
         }
     }

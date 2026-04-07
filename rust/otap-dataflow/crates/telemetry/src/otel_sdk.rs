@@ -161,7 +161,7 @@ mod tests {
 
         let metrics_config = MetricsConfig {
             readers: vec![MetricsReaderConfig::Periodic(MetricsReaderPeriodicConfig {
-                exporter: MetricsPeriodicExporterConfig::Console,
+                exporter: MetricsPeriodicExporterConfig::Console {},
                 interval: Duration::from_millis(10),
             })],
             views: Vec::new(),
