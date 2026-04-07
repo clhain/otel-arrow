@@ -1608,7 +1608,7 @@ groups:
         );
         assert_eq!(
             policy.header_propagation.default.selector,
-            crate::transport_headers_policy::PropagationSelector::AllCaptured
+            crate::transport_headers_policy::PropagationSelector::AllCaptured {}
         );
     }
 

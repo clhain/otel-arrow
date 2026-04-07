@@ -341,8 +341,8 @@ impl HeaderPropagationPolicy {
 
         // Check whether the header passes the default selector.
         let selected = match &self.default.selector {
-            PropagationSelector::AllCaptured => true,
-            PropagationSelector::None => false,
+            PropagationSelector::AllCaptured {} => true,
+            PropagationSelector::None {} => false,
             PropagationSelector::Named(names) => {
                 names.iter().any(|n| header.name.eq_ignore_ascii_case(n))
             }
@@ -375,17 +375,24 @@ pub struct PropagationDefault {
 }
 
 /// Selects which captured headers are candidates for propagation.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum PropagationSelector {
     /// Propagate all captured headers (subject to overrides).
-    AllCaptured,
+    // The empty variant is used for compatibility with Schemars complex enum handling in CRDs.
+    AllCaptured {},
     /// Do not propagate any captured headers by default (overrides may
     /// still select specific headers).
-    #[default]
-    None,
+    // The empty variant is used for compatibility with Schemars complex enum handling in CRDs.
+    None {},
     /// Propagate only headers whose stored names appear in this list.
     Named(Vec<String>),
+}
+
+impl Default for PropagationSelector {
+    fn default() -> Self {
+        PropagationSelector::None {}
+    }
 }
 
 /// Action to take for a header during propagation.
@@ -462,7 +469,7 @@ mod tests {
     #[test]
     fn default_propagation_policy() {
         let policy = HeaderPropagationPolicy::default();
-        assert_eq!(policy.default.selector, PropagationSelector::None);
+        assert_eq!(policy.default.selector, PropagationSelector::None {});
         assert_eq!(policy.default.action, PropagationAction::Propagate);
         assert_eq!(policy.default.name, NameStrategy::Preserve);
         assert_eq!(policy.default.on_error, ErrorAction::Drop);

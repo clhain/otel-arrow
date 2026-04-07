@@ -109,7 +109,7 @@ mod tests {
 
         let propagation_policy = HeaderPropagationPolicy::new(
             PropagationDefault {
-                selector: PropagationSelector::AllCaptured,
+                selector: PropagationSelector::AllCaptured {},
                 ..PropagationDefault::default()
             },
             vec![PropagationOverride {
@@ -173,7 +173,7 @@ mod tests {
 
         let propagation_policy = HeaderPropagationPolicy::new(
             PropagationDefault {
-                selector: PropagationSelector::AllCaptured,
+                selector: PropagationSelector::AllCaptured {},
                 ..PropagationDefault::default()
             },
             vec![],
@@ -207,7 +207,7 @@ mod tests {
         let headers = pdata_after.transport_headers().unwrap();
         let propagation_policy = HeaderPropagationPolicy::new(
             PropagationDefault {
-                selector: PropagationSelector::AllCaptured,
+                selector: PropagationSelector::AllCaptured {},
                 ..PropagationDefault::default()
             },
             vec![],

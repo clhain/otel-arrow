@@ -2178,7 +2178,7 @@ mod test {
     fn make_propagation_policy(action: PropagationAction) -> HeaderPropagationPolicy {
         HeaderPropagationPolicy::new(
             PropagationDefault {
-                selector: PropagationSelector::AllCaptured,
+                selector: PropagationSelector::AllCaptured {},
                 action,
                 ..Default::default()
             },
