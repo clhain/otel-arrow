@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775442186288,
+  "lastUpdate": 1775528841282,
   "repoUrl": "https://github.com/clhain/otel-arrow",
   "entries": {
     "Benchmark": [
@@ -2623,6 +2623,33 @@ window.BENCHMARK_DATA = {
           {
             "name": "linux-arm64-binary-size",
             "value": 68.11,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Cijo Thomas",
+            "username": "cijothomas",
+            "email": "cijo.thomas@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "092500ce98b89039cbc199b3368be66f4f08ba93",
+          "message": "feat(fake_data_generator): Add per-record variance to static log generation (#2543)\n\n## Summary\n\nThe static log generator previously produced batches where all records\nwere\nnearly identical — same body, same attribute values, same severity, no\ntrace\ncontext. This made payloads unrealistically compressible by\nArrow/columnar\nencoders (~57:1 zstd ratio), giving misleading throughput numbers in\nload tests.\n\n## Changes\n\n- **Body**: 50 realistic log message templates (~150 chars each) cycled\nacross\nrecords. When `log_body_size_bytes` is configured, templates are\nrepeated to\n  fill the target size. When 0, body is omitted entirely.\n- **Attribute names**: unified pool of 80 OTel semconv attribute names\n(e.g.\n`thread.id`, `http.route`, `db.query.text`). Overflow names use\n`attr_N`.\n- **Attribute values**: 80-entry pool of realistic strings — URLs,\nUUIDs,\nhostnames, SQL queries, error messages, user agents — cycled per record.\n  Special-cased types for `thread.id` (int), `http.response.status_code`\n  (weighted distribution), etc.\n- **Severity**: cycles 80% INFO / 15% WARN / 5% ERROR instead of\nall-INFO.\n- **TraceID / SpanID**: random unique IDs per log record, matching real\n  log-to-trace correlation behavior.\n- **Compression test**: new `test_compression_ratio_is_realistic`\nasserts\n  zstd ratio stays in 3:1–50:1 range (currently ~19:1), guarding against\n  regression to the old all-identical regime.\n- **Config docs**: updated `log_body_size_bytes` doc to reflect pool\nbehavior.\n\n## Impact\n\nBoth `fresh` and `pre_generated` strategies benefit since all variance\nis\ncomputed at generation time. `PreGenerated` retains zero runtime\nallocation\ncost — only the pre-built batch content is more realistic.\n\nCompression ratio improved from ~57:1 (before) to ~19:1 (after) with\n`log_body_size_bytes: 1024, num_log_attributes: 6`.",
+          "timestamp": "2026-04-06T18:38:01Z",
+          "url": "https://github.com/clhain/otel-arrow/commit/092500ce98b89039cbc199b3368be66f4f08ba93"
+        },
+        "date": 1775528838461,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "linux-amd64-binary-size",
+            "value": 100.76,
             "unit": "MB"
           }
         ]
