@@ -509,7 +509,8 @@ headers:
     fn propagation_policy_serde_roundtrip() {
         let yaml = r#"
 default:
-  selector: all_captured
+  selector:
+    all_captured: {}
   action: propagate
   name: preserve
   on_error: drop
@@ -542,7 +543,8 @@ header_capture:
       store_as: tenant_id
 header_propagation:
   default:
-    selector: all_captured
+    selector:
+        all_captured: {}
   overrides:
     - match:
         stored_names: ["authorization"]

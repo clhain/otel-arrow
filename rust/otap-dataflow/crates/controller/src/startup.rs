@@ -42,7 +42,7 @@ pub fn core_allocation_override(
 ) -> Option<CoreAllocation> {
     match (core_id_range, num_cores) {
         (Some(range), _) => Some(range),
-        (None, Some(0)) => Some(CoreAllocation::AllCores),
+        (None, Some(0)) => Some(CoreAllocation::AllCores {}),
         (None, Some(count)) => Some(CoreAllocation::CoreCount { count }),
         (None, None) => None,
     }
@@ -302,7 +302,7 @@ groups:
         );
         assert_eq!(
             core_allocation_override(Some(0), None),
-            Some(CoreAllocation::AllCores)
+            Some(CoreAllocation::AllCores {})
         );
         assert_eq!(core_allocation_override(None, None), None);
     }

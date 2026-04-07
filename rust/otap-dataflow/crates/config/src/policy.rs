@@ -195,12 +195,12 @@ pub struct ResourcesPolicy {
 }
 
 /// Defines how CPU cores should be allocated for pipeline execution.
-#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum CoreAllocation {
     /// Use all available CPU cores.
-    #[default]
-    AllCores,
+    // The empty variant is used for compatibility with Schemars complex enum handling in CRDs.
+    AllCores {},
     /// Use a specific number of CPU cores (starting from core 0).
     /// If the requested number exceeds available cores, use all available cores.
     CoreCount {
@@ -213,11 +213,16 @@ pub enum CoreAllocation {
         set: Vec<CoreRange>,
     },
 }
+impl Default for CoreAllocation {
+    fn default() -> Self {
+        CoreAllocation::AllCores {}
+    }
+}
 
 impl Display for CoreAllocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CoreAllocation::AllCores => write!(f, "*"),
+            CoreAllocation::AllCores {} => write!(f, "*"),
             CoreAllocation::CoreCount { count } => write!(f, "[{count} cores]"),
             CoreAllocation::CoreSet { set } => {
                 let mut first = true;
@@ -335,7 +340,7 @@ mod tests {
         );
         assert_eq!(
             defaults.resources.core_allocation,
-            super::CoreAllocation::AllCores
+            super::CoreAllocation::AllCores {}
         );
         assert_eq!(defaults.health, crate::health::HealthPolicy::default());
     }
@@ -364,7 +369,7 @@ mod tests {
 
     #[test]
     fn core_allocation_display_all_cores() {
-        assert_eq!(super::CoreAllocation::AllCores.to_string(), "*");
+        assert_eq!(super::CoreAllocation::AllCores {}.to_string(), "*");
     }
 
     #[test]

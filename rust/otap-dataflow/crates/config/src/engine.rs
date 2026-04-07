@@ -364,7 +364,7 @@ groups:
         );
         assert_eq!(
             defaults.resources.core_allocation,
-            crate::policy::CoreAllocation::AllCores
+            crate::policy::CoreAllocation::AllCores {}
         );
     }
 
@@ -1208,7 +1208,7 @@ groups:
         );
         assert_eq!(
             obs.policies.resources.core_allocation,
-            crate::policy::CoreAllocation::AllCores
+            crate::policy::CoreAllocation::AllCores {}
         );
         assert_eq!(
             resolved
@@ -1568,7 +1568,8 @@ policies:
         - match_names: ["x-engine-header"]
     header_propagation:
       default:
-        selector: all_captured
+        selector:
+          all_captured: {}
 engine: {}
 groups:
   default:

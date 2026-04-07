@@ -1427,7 +1427,7 @@ impl<PData: 'static + Clone + Send + Sync + std::fmt::Debug + ReceivedAtNode + U
         let num_cores = available_core_ids.len();
 
         match core_allocation {
-            CoreAllocation::AllCores => Ok(available_core_ids),
+            CoreAllocation::AllCores {} => Ok(available_core_ids),
             CoreAllocation::CoreCount { count } => {
                 if *count == 0 {
                     Ok(available_core_ids)
@@ -1921,7 +1921,7 @@ connections:
 
     #[test]
     fn select_all_cores_by_default() {
-        let core_allocation = CoreAllocation::AllCores;
+        let core_allocation = CoreAllocation::AllCores {};
         let available_core_ids = available_core_ids();
         let expected_core_ids = available_core_ids.clone();
         let result =

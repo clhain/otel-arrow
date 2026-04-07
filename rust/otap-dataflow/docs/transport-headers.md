@@ -83,7 +83,8 @@ nodes:
     # Override pipeline-level propagation for this exporter.
     header_propagation:
       default:
-        selector: all_captured
+        selector:
+          all_captured: {}
       overrides:
         - match:
             stored_names: ["authorization"]
@@ -165,7 +166,8 @@ includes on outbound requests. It operates in two stages:
 ```yaml
 header_propagation:
   default:
-    selector: all_captured  # default: none
+    selector:
+      all_captured: {} # default: none
     action: propagate       # default: propagate
     name: preserve          # default: preserve
     on_error: drop          # default: drop
@@ -258,7 +260,8 @@ policies:
           store_as: tenant_id
     header_propagation:
       default:
-        selector: all_captured
+        selector:
+          all_captured: {}
 groups:
   default:
     pipelines:
@@ -301,7 +304,8 @@ policies:
           sensitive: true
     header_propagation:
       default:
-        selector: all_captured
+        selector:
+          all_captured: {}
       overrides:
         - match:
             stored_names: ["authorization"]
@@ -351,7 +355,8 @@ policies:
           store_as: tenant_id
     header_propagation:
       default:
-        selector: all_captured
+        selector:
+          all_captured: {}
 
 groups:
   default:
@@ -379,7 +384,8 @@ groups:
             # Override: use stored name as wire name.
             header_propagation:
               default:
-                selector: all_captured
+                selector:
+                  all_captured: {}
                 name: stored_name
         connections:
           - from: otlp/ingest
