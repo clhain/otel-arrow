@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775528841282,
+  "lastUpdate": 1775614985023,
   "repoUrl": "https://github.com/clhain/otel-arrow",
   "entries": {
     "Benchmark": [
@@ -2650,6 +2650,33 @@ window.BENCHMARK_DATA = {
           {
             "name": "linux-amd64-binary-size",
             "value": 100.76,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "37df685b98ec6e7edc1f0ed84d4d00c72c371bf7",
+          "message": "fix(deps): update module google.golang.org/grpc to v1.80.0 (#2546)\n\nThis PR contains the following updates:\n\n| Package | Change |\n[Age](https://docs.renovatebot.com/merge-confidence/) |\n[Confidence](https://docs.renovatebot.com/merge-confidence/) |\n|---|---|---|---|\n| [google.golang.org/grpc](https://redirect.github.com/grpc/grpc-go) |\n`v1.79.3` → `v1.80.0` |\n![age](https://developer.mend.io/api/mc/badges/age/go/google.golang.org%2fgrpc/v1.80.0?slim=true)\n|\n![confidence](https://developer.mend.io/api/mc/badges/confidence/go/google.golang.org%2fgrpc/v1.79.3/v1.80.0?slim=true)\n|\n\n---\n\n### Release Notes\n\n<details>\n<summary>grpc/grpc-go (google.golang.org/grpc)</summary>\n\n###\n[`v1.80.0`](https://redirect.github.com/grpc/grpc-go/releases/tag/v1.80.0):\nRelease 1.80.0\n\n[Compare\nSource](https://redirect.github.com/grpc/grpc-go/compare/v1.79.3...v1.80.0)\n\n### Behavior Changes\n\n- balancer: log a warning if a balancer is registered with uppercase\nletters, as balancer names should be lowercase. In a future release,\nbalancer names will be treated as case-insensitive; see\n[#&#8203;5288](https://redirect.github.com/grpc/grpc-go/issues/5288) for\ndetails.\n([#&#8203;8837](https://redirect.github.com/grpc/grpc-go/issues/8837))\n- xds: update resource error handling and re-resolution logic\n([#&#8203;8907](https://redirect.github.com/grpc/grpc-go/issues/8907))\n- Re-resolve all `LOGICAL_DNS` clusters simultaneously when\nre-resolution is requested.\n- Fail all in-flight RPCs immediately upon receipt of listener or route\nresource errors, instead of allowing them to complete.\n\n### Bug Fixes\n\n- xds: support the LB policy configured in `LOGICAL_DNS` cluster\nresources instead of defaulting to `pick_first`.\n([#&#8203;8733](https://redirect.github.com/grpc/grpc-go/issues/8733))\n- credentials/tls: perform per-RPC authority validation against the leaf\ncertificate instead of the entire peer certificate chain.\n([#&#8203;8831](https://redirect.github.com/grpc/grpc-go/issues/8831))\n- xds: enabling A76 ring hash endpoint keys no longer causes EDS\nresources with invalid proxy metadata to be NACKed when HTTP CONNECT\n(gRFC A86) is disabled.\n([#&#8203;8875](https://redirect.github.com/grpc/grpc-go/issues/8875))\n- xds: validate that the sum of endpoint weights in a locality does not\nexceed the maximum `uint32` value.\n([#&#8203;8899](https://redirect.github.com/grpc/grpc-go/issues/8899))\n- Special Thanks: [@&#8203;RAVEYUS](https://redirect.github.com/RAVEYUS)\n- xds: fix incorrect proto field access in the weighted round robin\n(WRR) configuration where `blackout_period` was used instead of\n`weight_expiration_period`.\n([#&#8203;8915](https://redirect.github.com/grpc/grpc-go/issues/8915))\n- Special Thanks:\n[@&#8203;gregbarasch](https://redirect.github.com/gregbarasch)\n- xds/rbac: handle addresses with ports in IP matchers.\n([#&#8203;8990](https://redirect.github.com/grpc/grpc-go/issues/8990))\n\n### New Features\n\n- ringhash: enable gRFC A76 (endpoint hash keys and request hash\nheaders) by default.\n([#&#8203;8922](https://redirect.github.com/grpc/grpc-go/issues/8922))\n\n### Performance Improvements\n\n- credentials/alts: pool write buffers to reduce memory allocations and\nusage.\n([#&#8203;8919](https://redirect.github.com/grpc/grpc-go/issues/8919))\n- grpc: enable the use of pooled write buffers for buffering HTTP/2\nframe writes by default. This reduces memory usage when connections are\nidle. Use the\n[WithSharedWriteBuffer](https://pkg.go.dev/google.golang.org/grpc#WithSharedWriteBuffer)\ndial option or the\n[SharedWriteBuffer](https://pkg.go.dev/google.golang.org/grpc#SharedWriteBuffer)\nserver option to disable this feature.\n([#&#8203;8957](https://redirect.github.com/grpc/grpc-go/issues/8957))\n- xds/priority: stop caching child LB policies removed from the\nconfiguration. This will help reduce memory and cpu usage when\nlocalities are constantly switching between priorities.\n([#&#8203;8997](https://redirect.github.com/grpc/grpc-go/issues/8997))\n- mem: add a faster tiered buffer pool; use the experimental\n[mem.NewBinaryTieredBufferPool](https://pkg.go.dev/google.golang.org/grpc/mem@master#NewBinaryTieredBufferPool)\nfunction to create such pools.\n([#&#8203;8775](https://redirect.github.com/grpc/grpc-go/issues/8775))\n\n</details>\n\n---\n\n### Configuration\n\n📅 **Schedule**: Branch creation - \"before 8am on Monday\" (UTC),\nAutomerge - At any time (no schedule defined).\n\n🚦 **Automerge**: Disabled by config. Please merge this manually once you\nare satisfied.\n\n♻ **Rebasing**: Whenever PR becomes conflicted, or you tick the\nrebase/retry checkbox.\n\n🔕 **Ignore**: Close this PR and you won't be reminded about this update\nagain.\n\n---\n\n- [ ] <!-- rebase-check -->If you want to rebase/retry this PR, check\nthis box\n\n---\n\nThis PR was generated by [Mend Renovate](https://mend.io/renovate/).\nView the [repository job\nlog](https://developer.mend.io/github/open-telemetry/otel-arrow).\n\n<!--renovate-debug:eyJjcmVhdGVkSW5WZXIiOiI0My4xMDIuMTEiLCJ1cGRhdGVkSW5WZXIiOiI0My4xMDIuMTEiLCJ0YXJnZXRCcmFuY2giOiJtYWluIiwibGFiZWxzIjpbImRlcGVuZGVuY2llcyJdfQ==-->\n\n---------\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>\nCo-authored-by: otelbot <197425009+otelbot@users.noreply.github.com>",
+          "timestamp": "2026-04-07T02:20:06Z",
+          "url": "https://github.com/clhain/otel-arrow/commit/37df685b98ec6e7edc1f0ed84d4d00c72c371bf7"
+        },
+        "date": 1775614982777,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "linux-amd64-binary-size",
+            "value": 101.09,
             "unit": "MB"
           }
         ]
