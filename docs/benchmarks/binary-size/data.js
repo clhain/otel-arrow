@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775614985023,
+  "lastUpdate": 1775700927021,
   "repoUrl": "https://github.com/clhain/otel-arrow",
   "entries": {
     "Benchmark": [
@@ -2677,6 +2677,33 @@ window.BENCHMARK_DATA = {
           {
             "name": "linux-amd64-binary-size",
             "value": 101.09,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Joshua MacDonald",
+            "username": "jmacd",
+            "email": "jmacd@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "4a8d85d9777071156a09847d3e6e79c76ef9eb22",
+          "message": "[otap-df-pdata/common] variable size protobuf placeholder (#2589)\n\n# Change Summary\n\nAdd an optional fourth argument to proto_encode_len_delimited_of_size!\nmacro to specify the number of bytes for the length placeholder. The\nexisting 3-argument form continues to default to 4 bytes.\n\nUpdate all callsites in the telemetry crate's self_tracing encoder to\nuse 2-byte placeholders.\n\nPart of #1746\n\n## How are these changes tested?\n\n✅ \n\n## Are there any user-facing changes?\n\nNo\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-04-08T23:59:39Z",
+          "url": "https://github.com/clhain/otel-arrow/commit/4a8d85d9777071156a09847d3e6e79c76ef9eb22"
+        },
+        "date": 1775700924323,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "linux-amd64-binary-size",
+            "value": 102.03,
             "unit": "MB"
           }
         ]
