@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776824968154,
+  "lastUpdate": 1776912075585,
   "repoUrl": "https://github.com/clhain/otel-arrow",
   "entries": {
     "Benchmark": [
@@ -3050,6 +3050,33 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/clhain/otel-arrow/commit/c2e39e05477b8394ce45d84f73bd89f244a9419b"
         },
         "date": 1776824965490,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "linux-amd64-binary-size",
+            "value": 105.13,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Mikel Blanchard",
+            "username": "CodeBlanch",
+            "email": "mblanchard@macrosssoftware.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c2e39e05477b8394ce45d84f73bd89f244a9419b",
+          "message": "[query-engine] Slice expression bug fix (#2636)\n\n## Changes\n\n* Switch `Slice` expression (arrays and strings) to use `Slice(source,\nstart, [length])` instead of `Slice(source, start_inclusive,\n[end_exclusive])` to match KQL\n[substring](https://learn.microsoft.com/kusto/query/substring-function?view=azure-data-explorer)\nbehavior.\n\n/cc @albertlockett @drewrelmas\n\n---------\n\nCo-authored-by: albertlockett <a.lockett@f5.com>",
+          "timestamp": "2026-04-13T13:06:03Z",
+          "url": "https://github.com/clhain/otel-arrow/commit/c2e39e05477b8394ce45d84f73bd89f244a9419b"
+        },
+        "date": 1776912072167,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
